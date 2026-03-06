@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Reading Stopwatch</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface-hover: #1a1a1a;
+      --text: #f5f5f5;
+      --text-dim: #666;
+      --accent: #22c55e;
+      --accent-dim: #16a34a;
+      --danger: #ef4444;
+      --danger-dim: #dc2626;
+      --warning: #f59e0b;
+      --warning-dim: #d97706;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .history-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.875rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      transition: color 0.2s;
+    }
+
+    .history-btn:hover {
+      color: var(--text);
+    }
+
+    .timer-display {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    .timer {
+      font-size: clamp(3rem, 12vw, 5rem);
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      font-family: 'SF Mono', 'Menlo', monospace;
+    }
+
+    .timer-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.5rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1rem 0;
+      flex: 0 0 auto;
+    }
+
+    .controls-three {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0 0 1rem 0;
+      flex: 0 0 auto;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-end {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-end:hover {
+      background: var(--danger-dim);
+    }
+
+    .btn-save-inline {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-save-inline:hover {
+      background: #2563eb;
+    }
+
+    .btn-pause {
+      background: var(--warning);
+      color: #000;
+    }
+
+    .btn-pause:hover {
+      background: var(--warning-dim);
+    }
+
+    .btn-reset {
+      background: var(--surface);
+      color: var(--text);
+      flex: 0.5;
+    }
+
+    .btn-reset:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn {
+      flex: 1;
+      padding: 1.25rem;
+      border: none;
+      border-radius: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-start {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-start:hover {
+      background: var(--accent-dim);
+    }
+
+    .btn-start.running {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-start.running:hover {
+      background: var(--danger-dim);
+    }
+
+    .btn-lap {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .btn-lap:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-lap:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .laps-container {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 1rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .laps-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--surface);
+      margin-bottom: 0.5rem;
+    }
+
+    .laps-title {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .clear-laps {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .lap-list {
+      list-style: none;
+    }
+
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--surface);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .lap-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .lap-number {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      min-width: 2rem;
+    }
+
+    .lap-time {
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lap-delete {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .lap-delete:hover {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-dim);
+      font-size: 0.875rem;
+    }
+
+    /* History Panel */
+    .history-panel {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 100;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+
+    .history-panel.open {
+      transform: translateX(0);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 1rem;
+      border-bottom: 1px solid var(--surface);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+    }
+
+    .history-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .session-item {
+      padding: 1rem;
+      border-bottom: 1px solid var(--surface);
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .session-item:hover {
+      background: var(--surface-hover);
+    }
+
+    .session-item.clickable {
+      cursor: pointer;
+    }
+
+    .session-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-date {
+      font-size: 0.75rem;
+      color: #999;
+      margin-bottom: 0.5rem;
+    }
+
+    .session-time {
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .session-stats {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .session-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .session-stat-value {
+      font-family: 'SF Mono', 'Menlo', monospace;
+      color: var(--text);
+    }
+
+    .session-delete {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem 0.75rem;
+      flex-shrink: 0;
+      line-height: 1;
+      transition: opacity 0.2s;
+    }
+
+    .session-delete:hover {
+      opacity: 0.8;
+    }
+
+    .session-detail-view {
+      display: none;
+    }
+
+    .session-detail-view.open {
+      display: block;
+    }
+
+    .session-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--surface);
+    }
+
+    .session-detail-header button {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .session-detail-laps {
+      margin-top: 1rem;
+    }
+
+    /* Save Session Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 320px;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: scale(1);
+    }
+
+    .modal h3 {
+      margin-bottom: 1rem;
+      font-size: 1.125rem;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--surface-hover);
+      border-radius: 0.5rem;
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .modal-buttons .btn {
+      padding: 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    .btn-save {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-discard {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .install-prompt {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.875rem;
+      display: none;
+      animation: fadeIn 0.3s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Reading Stopwatch</h1>
+      <button class="history-btn" id="historyBtn">History</button>
+    </header>
+
+    <div class="timer-display">
+      <div class="timer" id="timer">00:00:00</div>
+      <div class="timer-label" id="timerLabel">Ready</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-start" id="startBtn">Start</button>
+      <button class="btn btn-lap" id="lapBtn" disabled style="display: none;">Lap</button>
+      <button class="btn btn-end" id="endBtn" style="display: none;">End</button>
+      <button class="btn btn-reset" id="resetBtn" style="display: none;">Reset</button>
+    </div>
+
+    <div class="laps-container">
+      <div class="laps-header">
+        <span class="laps-title">Laps</span>
+        <button class="clear-laps" id="clearLaps" style="display: none;">Clear</button>
+      </div>
+      <ul class="lap-list" id="lapList">
+        <li class="empty-state" id="emptyState">No laps recorded</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="history-panel" id="historyPanel">
+    <div class="history-header">
+      <h2>Sessions</h2>
+      <button class="close-btn" id="closeHistory">&times;</button>
+    </div>
+    <div id="sessionsList"></div>
+  </div>
+
+  <div class="modal-overlay" id="saveModal">
+    <div class="modal">
+      <h3>Save Session</h3>
+      <input type="text" class="modal-input" id="sessionName" placeholder="Session name (optional)">
+      <div class="modal-buttons">
+        <button class="btn btn-discard" id="discardBtn">Discard</button>
+        <button class="btn btn-save" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="install-prompt" id="installPrompt">
+    Add to Home Screen
+  </div>
+
+  <script>
+    const timerEl = document.getElementById('timer');
+    const timerLabelEl = document.getElementById('timerLabel');
+    const startBtn = document.getElementById('startBtn');
+    const lapBtn = document.getElementById('lapBtn');
+    const endBtn = document.getElementById('endBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const lapList = document.getElementById('lapList');
+    const emptyState = document.getElementById('emptyState');
+    const clearLapsBtn = document.getElementById('clearLaps');
+    const historyBtn = document.getElementById('historyBtn');
+    const historyPanel = document.getElementById('historyPanel');
+    const closeHistory = document.getElementById('closeHistory');
+    const sessionsList = document.getElementById('sessionsList');
+    const saveModal = document.getElementById('saveModal');
+    const sessionNameInput = document.getElementById('sessionName');
+    const saveBtn = document.getElementById('saveBtn');
+    const discardBtn = document.getElementById('discardBtn');
+    const installPrompt = document.getElementById('installPrompt');
+
+    let isRunning = false;
+    let isPaused = false;
+    let startTime = 0;
+    let elapsed = 0;
+    let timerInterval = null;
+    let laps = [];
+    let currentSessionId = null;
+
+    function formatTime(ms, showMs = true) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const centiseconds = Math.floor((ms % 1000) / 10);
+
+      const pad = (n) => n.toString().padStart(2, '0');
+      
+      if (showMs) {
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(centiseconds)}`;
+      }
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function updateDisplay() {
+      const currentElapsed = isRunning ? Date.now() - startTime + elapsed : elapsed;
+      timerEl.textContent = formatTime(currentElapsed);
+    }
+
+    function start() {
+      isRunning = true;
+      isPaused = false;
+      startTime = Date.now();
+      timerLabelEl.textContent = 'Running';
+      startBtn.textContent = 'Pause';
+      startBtn.classList.add('running');
+      startBtn.classList.remove('btn-start');
+      startBtn.classList.add('btn-pause');
+      lapBtn.disabled = false;
+      lapBtn.style.display = 'inline-block';
+      endBtn.style.display = 'inline-block';
+      resetBtn.style.display = 'none';
+      
+      timerInterval = setInterval(updateDisplay, 10);
+    }
+
+    function pause() {
+      isRunning = false;
+      isPaused = true;
+      elapsed += Date.now() - startTime;
+      clearInterval(timerInterval);
+      timerLabelEl.textContent = 'Paused';
+      startBtn.textContent = 'Resume';
+      startBtn.classList.remove('running');
+      lapBtn.style.display = 'inline-block';
+      endBtn.style.display = 'inline-block';
+    }
+
+    function resume() {
+      isRunning = true;
+      isPaused = false;
+      startTime = Date.now();
+      timerLabelEl.textContent = 'Running';
+      startBtn.textContent = 'Pause';
+      startBtn.classList.add('running');
+      lapBtn.style.display = 'inline-block';
+      endBtn.style.display = 'inline-block';
+      
+      timerInterval = setInterval(updateDisplay, 10);
+    }
+
+    function end() {
+      if (isRunning) {
+        elapsed += Date.now() - startTime;
+        clearInterval(timerInterval);
+      }
+      isRunning = false;
+      isPaused = false;
+      timerLabelEl.textContent = 'Ended';
+      lapBtn.style.display = 'none';
+      lapBtn.disabled = true;
+      endBtn.style.display = 'none';
+      resetBtn.style.display = 'inline-block';
+      showSaveModal();
+    }
+
+    function reset() {
+      isRunning = false;
+      isPaused = false;
+      startTime = 0;
+      elapsed = 0;
+      laps = [];
+      clearInterval(timerInterval);
+      timerEl.textContent = '00:00:00';
+      timerLabelEl.textContent = 'Ready';
+      startBtn.textContent = 'Start';
+      startBtn.classList.remove('running');
+      startBtn.classList.remove('btn-pause');
+      startBtn.classList.add('btn-start');
+      lapBtn.disabled = true;
+      lapBtn.style.display = 'none';
+      endBtn.style.display = 'none';
+      resetBtn.style.display = 'none';
+      renderLaps();
+    }
+
+    function addLap() {
+      const lapTime = Date.now() - startTime + elapsed;
+      laps.unshift({
+        time: lapTime,
+        number: laps.length + 1
+      });
+      renderLaps();
+    }
+
+    function deleteLap(index) {
+      laps.splice(index, 1);
+      laps.forEach((lap, i) => lap.number = i + 1);
+      renderLaps();
+    }
+
+    function clearLaps() {
+      laps = [];
+      renderLaps();
+    }
+
+    function renderLaps() {
+      if (laps.length === 0) {
+        emptyState.style.display = 'block';
+        clearLapsBtn.style.display = 'none';
+        lapList.innerHTML = '<li class="empty-state" id="emptyState">No laps recorded</li>';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      clearLapsBtn.style.display = 'block';
+      
+      lapList.innerHTML = laps.map((lap, index) => `
+        <li class="lap-item">
+          <div class="lap-info">
+            <span class="lap-number">#${lap.number}</span>
+            <span class="lap-time">${formatTime(lap.time)}</span>
+          </div>
+          <button class="lap-delete" data-index="${index}">&times;</button>
+        </li>
+      `).join('');
+
+      lapList.querySelectorAll('.lap-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteLap(parseInt(btn.dataset.index)));
+      });
+    }
+
+    function showSaveModal() {
+      saveModal.classList.add('open');
+      sessionNameInput.focus();
+    }
+
+    function hideSaveModal() {
+      saveModal.classList.remove('open');
+      sessionNameInput.value = '';
+    }
+
+    function saveSession(name) {
+      const sessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
+      const session = {
+        id: Date.now().toString(),
+        name: name || `Session ${sessions.length + 1}`,
+        date: new Date().toISOString(),
+        totalTime: elapsed,
+        laps: [...laps]
+      };
+      sessions.unshift(session);
+      localStorage.setItem('stopwatchSessions', JSON.stringify(sessions));
+      hideSaveModal();
+    }
+
+    function renderSessions() {
+      const sessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
+      
+      if (sessions.length === 0) {
+        sessionsList.innerHTML = '<div class="empty-state">No saved sessions</div>';
+        return;
+      }
+
+      sessionsList.innerHTML = sessions.map(session => {
+        const date = new Date(session.date);
+        const dateStr = date.toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+        
+        const avgTimePerLap = session.laps.length > 0 
+          ? Math.floor(session.totalTime / session.laps.length)
+          : 0;
+        
+        return `
+          <div class="session-item clickable" data-id="${session.id}">
+            <div class="session-details">
+              <div class="session-date">${dateStr}</div>
+              <div class="session-time">${formatTime(session.totalTime, false)}</div>
+              <div class="session-stats">
+                <div class="session-stat">
+                  <span>${session.laps.length} ${session.laps.length === 1 ? 'lap' : 'laps'}</span>
+                </div>
+                <div class="session-stat">
+                  <span class="session-stat-value">${formatTime(avgTimePerLap, false)}/lap</span>
+                </div>
+                ${session.name !== `Session ${sessions.indexOf(session) + 1}` ? `
+                <div class="session-stat">
+                  <span>${session.name}</span>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+            <button class="session-delete" data-id="${session.id}">×</button>
+          </div>
+        `;
+      }).join('');
+
+      sessionsList.querySelectorAll('.session-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('session-delete')) {
+            const id = item.dataset.id;
+            showSessionDetail(id, sessions);
+          }
+        });
+      });
+
+      sessionsList.querySelectorAll('.session-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const sessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
+          const filtered = sessions.filter(s => s.id !== id);
+          localStorage.setItem('stopwatchSessions', JSON.stringify(filtered));
+          renderSessions();
+        });
+      });
+    }
+
+    function showSessionDetail(sessionId, sessions) {
+      const session = sessions.find(s => s.id === sessionId);
+      if (!session) return;
+
+      const date = new Date(session.date);
+      const dateStr = date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+
+      const avgTimePerLap = session.laps.length > 0 
+        ? Math.floor(session.totalTime / session.laps.length)
+        : 0;
+
+      sessionsList.innerHTML = `
+        <div class="session-detail-view open">
+          <div class="session-detail-header">
+            <button id="backBtn" style="padding: 0.5rem; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">‹</button>
+            <div>
+              <h3 style="margin: 0; font-size: 1.125rem;">${session.name}</h3>
+              <div style="font-size: 0.75rem; color: var(--text-dim);">${dateStr}</div>
+            </div>
+          </div>
+          <div style="padding: 0 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--surface);">
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">Total Time</div>
+                <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${formatTime(session.totalTime, false)}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">Average</div>
+                <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${formatTime(avgTimePerLap, false)}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">Laps</div>
+                <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${session.laps.length}</div>
+              </div>
+            </div>
+            <div class="session-detail-laps">
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Lap Times</div>
+              <ul class="lap-list" style="list-style: none;">
+                ${session.laps.map((lap, index) => `
+                  <li class="lap-item">
+                    <div class="lap-info">
+                      <span class="lap-number">#${index + 1}</span>
+                      <span class="lap-time">${formatTime(lap.time, false)}</span>
+                    </div>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('backBtn').addEventListener('click', renderSessions);
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (isRunning) {
+        pause();
+      } else if (isPaused) {
+        resume();
+      } else {
+        start();
+      }
+    });
+
+    endBtn.addEventListener('click', end);
+    resetBtn.addEventListener('click', reset);
+
+    lapBtn.addEventListener('click', addLap);
+    clearLapsBtn.addEventListener('click', clearLaps);
+    
+    historyBtn.addEventListener('click', () => {
+      renderSessions();
+      historyPanel.classList.add('open');
+    });
+
+    closeHistory.addEventListener('click', () => {
+      historyPanel.classList.remove('open');
+    });
+
+    saveBtn.addEventListener('click', () => {
+      saveSession(sessionNameInput.value);
+    });
+
+    discardBtn.addEventListener('click', () => {
+      hideSaveModal();
+      reset();
+    });
+
+    sessionNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveSession(sessionNameInput.value);
+    });
+
+    saveModal.addEventListener('click', (e) => {
+      if (e.target === saveModal) {
+        hideSaveModal();
+        reset();
+      }
+    });
+
+    // PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(console.error);
+    }
+
+    // Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installPrompt.style.display = 'block';
+    });
+
+    installPrompt.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installPrompt.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
