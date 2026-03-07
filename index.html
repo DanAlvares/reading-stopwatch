@@ -558,15 +558,15 @@
       <button class="btn btn-reset" id="resetBtn" style="display: none;">Reset</button>
     </div>
 
-    <div class="laps-container">
-      <div class="laps-header">
-        <span class="laps-title">Laps</span>
-        <button class="clear-laps" id="clearLaps" style="display: none;">Clear</button>
-      </div>
-      <ul class="lap-list" id="lapList">
-        <li class="empty-state" id="emptyState">No laps recorded</li>
-      </ul>
-    </div>
+     <div class="laps-container">
+       <div class="laps-header">
+         <span class="laps-title">Pages</span>
+         <button class="clear-laps" id="clearLaps" style="display: none;">Clear</button>
+       </div>
+       <ul class="lap-list" id="lapList">
+         <li class="empty-state" id="emptyState">No pages recorded</li>
+       </ul>
+     </div>
   </div>
 
   <div class="history-panel" id="historyPanel">
@@ -720,33 +720,35 @@
       renderLaps();
     }
 
-    function addSplit() {
-      const lapTime = Date.now() - startTime + elapsed;
-      laps.unshift({
-        time: lapTime,
-        number: laps.length + 1
-      });
-      renderLaps();
-    }
+     function addSplit() {
+       const lapTime = Date.now() - startTime + elapsed;
+       laps.unshift({
+         time: lapTime,
+         number: 0
+       });
+       // Update numbering for all laps (starts from 0 at top)
+       laps.forEach((lap, index) => lap.number = index);
+       renderLaps();
+     }
 
-    function deleteLap(index) {
-      laps.splice(index, 1);
-      laps.forEach((lap, i) => lap.number = i + 1);
-      renderLaps();
-    }
+     function deleteLap(index) {
+       laps.splice(index, 1);
+       laps.forEach((lap, i) => lap.number = i);
+       renderLaps();
+     }
 
     function clearLaps() {
       laps = [];
       renderLaps();
     }
 
-    function renderLaps() {
-      if (laps.length === 0) {
-        emptyState.style.display = 'block';
-        clearLapsBtn.style.display = 'none';
-        lapList.innerHTML = '<li class="empty-state" id="emptyState">No laps recorded</li>';
-        return;
-      }
+     function renderLaps() {
+       if (laps.length === 0) {
+         emptyState.style.display = 'block';
+         clearLapsBtn.style.display = 'none';
+         lapList.innerHTML = '<li class="empty-state" id="emptyState">No pages recorded</li>';
+         return;
+       }
 
       emptyState.style.display = 'none';
       clearLapsBtn.style.display = 'block';
