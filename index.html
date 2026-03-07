@@ -619,6 +619,7 @@
     let timerInterval = null;
     let laps = [];
     let currentSessionId = null;
+    let pageCount = 0;  // Track total pages created in session
 
     function formatTime(ms, showMs = true) {
       const totalSeconds = Math.floor(ms / 1000);
@@ -709,25 +710,26 @@
       showSaveModal();
     }
 
-    function reset() {
-      isRunning = false;
-      isPaused = false;
-      startTime = 0;
-      elapsed = 0;
-      laps = [];
-      clearInterval(timerInterval);
-      timerEl.textContent = '00:00:00';
-      timerLabelEl.textContent = 'Ready';
-      startBtn.textContent = 'Start';
-      startBtn.classList.remove('running');
-      startBtn.classList.remove('btn-pause');
-      startBtn.classList.add('btn-start');
-      newPageBtn.disabled = true;
-      newPageBtn.style.display = 'none';
-      endBtn.style.display = 'none';
-      resetBtn.style.display = 'none';
-      renderLaps();
-    }
+     function reset() {
+       isRunning = false;
+       isPaused = false;
+       startTime = 0;
+       elapsed = 0;
+       laps = [];
+       pageCount = 0;
+       clearInterval(timerInterval);
+       timerEl.textContent = '00:00:00';
+       timerLabelEl.textContent = 'Ready';
+       startBtn.textContent = 'Start';
+       startBtn.classList.remove('running');
+       startBtn.classList.remove('btn-pause');
+       startBtn.classList.add('btn-start');
+       newPageBtn.disabled = true;
+       newPageBtn.style.display = 'none';
+       endBtn.style.display = 'none';
+       resetBtn.style.display = 'none';
+       renderLaps();
+     }
 
      function addSplit() {
        const currentTime = Date.now() - startTime + elapsed;
@@ -738,19 +740,17 @@
          pageTime = currentTime - laps[0].totalSessionTime;
        }
        
+       pageCount++;
        laps.unshift({
          pageTime: pageTime,
          totalSessionTime: currentTime,
-         number: 0
+         number: pageCount
        });
-       // Update numbering for all laps (starts from 1 in display)
-       laps.forEach((lap, index) => lap.number = index + 1);
        renderLaps();
      }
 
      function deleteLap(index) {
        laps.splice(index, 1);
-       laps.forEach((lap, i) => lap.number = i + 1);
        renderLaps();
      }
 
