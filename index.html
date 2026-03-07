@@ -635,10 +635,10 @@
       return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     }
 
-    function updateDisplay() {
-      const currentElapsed = isRunning ? Date.now() - startTime + elapsed : elapsed;
-      timerEl.textContent = formatTime(currentElapsed);
-    }
+     function updateDisplay() {
+       const currentElapsed = isRunning ? Date.now() - startTime + elapsed : elapsed;
+       timerEl.textContent = formatTime(currentElapsed, false);
+     }
 
      function start() {
        isRunning = true;
@@ -751,15 +751,15 @@
       emptyState.style.display = 'none';
       clearLapsBtn.style.display = 'block';
       
-      lapList.innerHTML = laps.map((lap, index) => `
-        <li class="lap-item">
-          <div class="lap-info">
-            <span class="lap-number">#${lap.number}</span>
-            <span class="lap-time">${formatTime(lap.time)}</span>
-          </div>
-          <button class="lap-delete" data-index="${index}">&times;</button>
-        </li>
-      `).join('');
+       lapList.innerHTML = laps.map((lap, index) => `
+         <li class="lap-item">
+           <div class="lap-info">
+             <span class="lap-number">#${lap.number}</span>
+             <span class="lap-time">${formatTime(lap.time, false)}</span>
+           </div>
+           <button class="lap-delete" data-index="${index}">&times;</button>
+         </li>
+       `).join('');
 
       lapList.querySelectorAll('.lap-delete').forEach(btn => {
         btn.addEventListener('click', () => deleteLap(parseInt(btn.dataset.index)));
