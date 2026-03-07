@@ -736,13 +736,16 @@
        let pageTime = currentTime;
        
        // If there are existing pages, calculate time since last page
+       // and update the existing first page's time
        if (laps.length > 0) {
          pageTime = currentTime - laps[0].totalSessionTime;
+         // Update the first page's time (it should only count until now)
+         laps[0].pageTime = pageTime;
        }
        
        pageCount++;
        laps.unshift({
-         pageTime: pageTime,
+         pageTime: 0,  // New page starts at 0, will be updated by live timer
          totalSessionTime: currentTime,
          number: pageCount
        });
