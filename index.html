@@ -841,7 +841,7 @@
         });
         
          const avgTimePerLap = session.laps.length > 0 
-           ? Math.floor(session.laps.reduce((sum, lap) => sum + (lap.pageTime || 0), 0) / session.laps.length)
+           ? Math.floor(session.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0) / session.laps.length)
            : 0;
         
         return `
@@ -903,7 +903,7 @@
       });
 
        const avgTimePerLap = session.laps.length > 0 
-         ? Math.floor(session.laps.reduce((sum, lap) => sum + (lap.pageTime || 0), 0) / session.laps.length)
+         ? Math.floor(session.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0) / session.laps.length)
          : 0;
 
       sessionsList.innerHTML = `
