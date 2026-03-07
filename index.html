@@ -640,50 +640,50 @@
       timerEl.textContent = formatTime(currentElapsed);
     }
 
-    function start() {
-      isRunning = true;
-      isPaused = false;
-      startTime = Date.now();
-      timerLabelEl.textContent = 'Running';
-      startBtn.textContent = 'Pause';
-      startBtn.classList.add('running');
-      startBtn.classList.remove('btn-start');
-      startBtn.classList.add('btn-pause');
-      newPageBtn.disabled = false;
-      newPageBtn.style.display = 'none';
-      endBtn.style.display = 'none';
-      resetBtn.style.display = 'none';
-      
-      // Auto-add first split when starting
-      addSplit();
-      
-      timerInterval = setInterval(updateDisplay, 10);
-    }
+     function start() {
+       isRunning = true;
+       isPaused = false;
+       startTime = Date.now();
+       timerLabelEl.textContent = 'Running';
+       startBtn.textContent = 'Pause';
+       startBtn.classList.add('running');
+       startBtn.classList.remove('btn-start');
+       startBtn.classList.add('btn-pause');
+       newPageBtn.disabled = false;
+       newPageBtn.style.display = 'inline-block';
+       endBtn.style.display = 'none';
+       resetBtn.style.display = 'none';
+       
+       // Auto-add first split when starting
+       addSplit();
+       
+       timerInterval = setInterval(updateDisplay, 10);
+     }
 
-    function pause() {
-      isRunning = false;
-      isPaused = true;
-      elapsed += Date.now() - startTime;
-      clearInterval(timerInterval);
-      timerLabelEl.textContent = 'Paused';
-      startBtn.textContent = 'Resume';
-      startBtn.classList.remove('running');
-      newPageBtn.style.display = 'inline-block';
-      endBtn.style.display = 'inline-block';
-    }
+     function pause() {
+       isRunning = false;
+       isPaused = true;
+       elapsed += Date.now() - startTime;
+       clearInterval(timerInterval);
+       timerLabelEl.textContent = 'Paused';
+       startBtn.textContent = 'Resume';
+       startBtn.classList.remove('running');
+       newPageBtn.style.display = 'none';
+       endBtn.style.display = 'inline-block';
+     }
 
-    function resume() {
-      isRunning = true;
-      isPaused = false;
-      startTime = Date.now();
-      timerLabelEl.textContent = 'Running';
-      startBtn.textContent = 'Pause';
-      startBtn.classList.add('running');
-      newPageBtn.style.display = 'none';
-      endBtn.style.display = 'none';
-      
-      timerInterval = setInterval(updateDisplay, 10);
-    }
+     function resume() {
+       isRunning = true;
+       isPaused = false;
+       startTime = Date.now();
+       timerLabelEl.textContent = 'Running';
+       startBtn.textContent = 'Pause';
+       startBtn.classList.add('running');
+       newPageBtn.style.display = 'inline-block';
+       endBtn.style.display = 'none';
+       
+       timerInterval = setInterval(updateDisplay, 10);
+     }
 
     function end() {
       if (isRunning) {
