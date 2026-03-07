@@ -933,14 +933,17 @@
              <div class="session-detail-laps">
                <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
               <ul class="lap-list" style="list-style: none;">
-                 ${session.laps.map((lap, index) => `
-                   <li class="lap-item">
-                     <div class="lap-info">
-                       <span class="lap-number">#${index + 1}</span>
-                       <span class="lap-time">${formatTime(lap.pageTime || lap.time, false)}</span>
-                     </div>
-                  </li>
-                `).join('')}
+                  ${session.laps.map((lap, index) => {
+                    const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time !== undefined ? lap.time : 0);
+                    return `
+                    <li class="lap-item">
+                      <div class="lap-info">
+                        <span class="lap-number">#${index + 1}</span>
+                        <span class="lap-time">${formatTime(lapTime, false)}</span>
+                      </div>
+                   </li>
+                 `;
+                  }).join('')}
               </ul>
             </div>
           </div>
