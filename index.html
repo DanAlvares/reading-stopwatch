@@ -194,16 +194,17 @@
       background: var(--danger-dim);
     }
 
-    .btn-lap {
-      background: var(--surface);
-      color: var(--text);
+    .btn-split {
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
     }
 
-    .btn-lap:hover {
-      background: var(--surface-hover);
+    .btn-split:hover {
+      background: var(--accent-dim);
     }
 
-    .btn-lap:disabled {
+    .btn-split:disabled {
       opacity: 0.3;
       cursor: not-allowed;
     }
@@ -552,7 +553,7 @@
 
     <div class="controls">
       <button class="btn btn-start" id="startBtn">Start</button>
-      <button class="btn btn-lap" id="lapBtn" disabled style="display: none;">Lap</button>
+      <button class="btn btn-split" id="splitBtn" disabled style="display: none;">Split</button>
       <button class="btn btn-end" id="endBtn" style="display: none;">End</button>
       <button class="btn btn-reset" id="resetBtn" style="display: none;">Reset</button>
     </div>
@@ -595,7 +596,7 @@
     const timerEl = document.getElementById('timer');
     const timerLabelEl = document.getElementById('timerLabel');
     const startBtn = document.getElementById('startBtn');
-    const lapBtn = document.getElementById('lapBtn');
+    const splitBtn = document.getElementById('splitBtn');
     const endBtn = document.getElementById('endBtn');
     const resetBtn = document.getElementById('resetBtn');
     const lapList = document.getElementById('lapList');
@@ -648,10 +649,13 @@
       startBtn.classList.add('running');
       startBtn.classList.remove('btn-start');
       startBtn.classList.add('btn-pause');
-      lapBtn.disabled = false;
-      lapBtn.style.display = 'inline-block';
-      endBtn.style.display = 'inline-block';
+      splitBtn.disabled = false;
+      splitBtn.style.display = 'inline-block';
+      endBtn.style.display = 'none';
       resetBtn.style.display = 'none';
+      
+      // Auto-add first split when starting
+      addSplit();
       
       timerInterval = setInterval(updateDisplay, 10);
     }
@@ -664,7 +668,7 @@
       timerLabelEl.textContent = 'Paused';
       startBtn.textContent = 'Resume';
       startBtn.classList.remove('running');
-      lapBtn.style.display = 'inline-block';
+      splitBtn.style.display = 'inline-block';
       endBtn.style.display = 'inline-block';
     }
 
@@ -675,8 +679,8 @@
       timerLabelEl.textContent = 'Running';
       startBtn.textContent = 'Pause';
       startBtn.classList.add('running');
-      lapBtn.style.display = 'inline-block';
-      endBtn.style.display = 'inline-block';
+      splitBtn.style.display = 'inline-block';
+      endBtn.style.display = 'none';
       
       timerInterval = setInterval(updateDisplay, 10);
     }
@@ -689,8 +693,8 @@
       isRunning = false;
       isPaused = false;
       timerLabelEl.textContent = 'Ended';
-      lapBtn.style.display = 'none';
-      lapBtn.disabled = true;
+      splitBtn.style.display = 'none';
+      splitBtn.disabled = true;
       endBtn.style.display = 'none';
       resetBtn.style.display = 'inline-block';
       showSaveModal();
@@ -709,14 +713,14 @@
       startBtn.classList.remove('running');
       startBtn.classList.remove('btn-pause');
       startBtn.classList.add('btn-start');
-      lapBtn.disabled = true;
-      lapBtn.style.display = 'none';
+      splitBtn.disabled = true;
+      splitBtn.style.display = 'none';
       endBtn.style.display = 'none';
       resetBtn.style.display = 'none';
       renderLaps();
     }
 
-    function addLap() {
+    function addSplit() {
       const lapTime = Date.now() - startTime + elapsed;
       laps.unshift({
         time: lapTime,
@@ -927,7 +931,7 @@
     endBtn.addEventListener('click', end);
     resetBtn.addEventListener('click', reset);
 
-    lapBtn.addEventListener('click', addLap);
+    splitBtn.addEventListener('click', addSplit);
     clearLapsBtn.addEventListener('click', clearLaps);
     
     historyBtn.addEventListener('click', () => {
