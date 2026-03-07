@@ -283,6 +283,14 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .lap-time.fastest {
+      color: var(--accent);
+    }
+
+    .lap-time.slowest {
+      color: var(--danger);
+    }
+
     .lap-delete {
       background: none;
       border: none;
@@ -619,7 +627,27 @@
     let timerInterval = null;
     let laps = [];
     let currentSessionId = null;
-    let pageCount = 0;  // Track total pages created in session
+    let pageCount = 0;
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+      } catch (err) {}
+    }
+
+    async function releaseWakeLock() {
+      if (wakeLock) {
+        await wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        await requestWakeLock();
+      }
+    });
 
     function formatTime(ms, showMs = true) {
       const totalSeconds = Math.floor(ms / 1000);
@@ -664,7 +692,8 @@
        endBtn.style.display = 'none';
        resetBtn.style.display = 'none';
        
-       // Auto-add first split when starting
+       requestWakeLock();
+       
        addSplit();
        
        timerInterval = setInterval(updateDisplay, 10);
@@ -680,6 +709,8 @@
        startBtn.classList.remove('running');
        newPageBtn.style.display = 'none';
        endBtn.style.display = 'inline-block';
+       
+       releaseWakeLock();
      }
 
      function resume() {
@@ -707,6 +738,8 @@
       newPageBtn.disabled = true;
       endBtn.style.display = 'none';
       resetBtn.style.display = 'inline-block';
+      
+      releaseWakeLock();
       showSaveModal();
     }
 
@@ -728,6 +761,8 @@
        newPageBtn.style.display = 'none';
        endBtn.style.display = 'none';
        resetBtn.style.display = 'none';
+       
+       releaseWakeLock();
        renderLaps();
      }
 
@@ -773,30 +808,47 @@
        emptyState.style.display = 'none';
        clearLapsBtn.style.display = 'block';
        
+       const lapTimes = laps.map((lap, index) => {
+         if (index === 0 && isRunning) {
+           return null;
+         }
+         return lap.pageTime;
+       }).filter(t => t !== null);
+       
+       const shouldHighlight = lapTimes.length > 2;
+       const minTime = Math.min(...lapTimes);
+       const maxTime = Math.max(...lapTimes);
+       
        lapList.innerHTML = laps.map((lap, index) => {
          let displayTime;
-         // For the first (latest) page, show the live counting time
          if (index === 0 && isRunning) {
            const currentTime = Date.now() - startTime + elapsed;
            displayTime = currentTime - lap.totalSessionTime;
          } else {
            displayTime = lap.pageTime;
          }
+         
+         let highlightClass = '';
+         if (shouldHighlight && !(index === 0 && isRunning)) {
+           if (displayTime === minTime) highlightClass = 'fastest';
+           else if (displayTime === maxTime) highlightClass = 'slowest';
+         }
+         
          return `
            <li class="lap-item">
              <div class="lap-info">
                <span class="lap-number">#${lap.number}</span>
-               <span class="lap-time" data-live="${index === 0 ? 'true' : 'false'}">${formatTime(displayTime, false)}</span>
+               <span class="lap-time ${highlightClass}" data-live="${index === 0 ? 'true' : 'false'}">${formatTime(displayTime, false)}</span>
              </div>
              <button class="lap-delete" data-index="${index}">&times;</button>
            </li>
          `;
        }).join('');
 
-      lapList.querySelectorAll('.lap-delete').forEach(btn => {
-        btn.addEventListener('click', () => deleteLap(parseInt(btn.dataset.index)));
-      });
-    }
+       lapList.querySelectorAll('.lap-delete').forEach(btn => {
+         btn.addEventListener('click', () => deleteLap(parseInt(btn.dataset.index)));
+       });
+     }
 
     function showSaveModal() {
       saveModal.classList.add('open');
@@ -906,6 +958,11 @@
          ? Math.floor(session.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0) / session.laps.length)
          : 0;
 
+       const lapTimes = session.laps.map(lap => (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0));
+       const shouldHighlight = lapTimes.length > 3;
+       const minTime = Math.min(...lapTimes);
+       const maxTime = Math.max(...lapTimes);
+
       sessionsList.innerHTML = `
         <div class="session-detail-view open">
           <div class="session-detail-header">
@@ -930,25 +987,30 @@
                  <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${session.laps.length}</div>
                </div>
             </div>
-             <div class="session-detail-laps">
-               <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
-              <ul class="lap-list" style="list-style: none;">
-                  ${session.laps.map((lap, index) => {
-                    const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time !== undefined ? lap.time : 0);
-                    return `
-                    <li class="lap-item">
-                      <div class="lap-info">
-                        <span class="lap-number">#${index + 1}</span>
-                        <span class="lap-time">${formatTime(lapTime, false)}</span>
-                      </div>
-                   </li>
-                 `;
-                  }).join('')}
-              </ul>
-            </div>
-          </div>
-        </div>
-      `;
+              <div class="session-detail-laps">
+                <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
+               <ul class="lap-list" style="list-style: none;">
+                   ${session.laps.map((lap, index) => {
+                     const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0);
+                     let highlightClass = '';
+                     if (shouldHighlight) {
+                       if (lapTime === minTime) highlightClass = 'fastest';
+                       else if (lapTime === maxTime) highlightClass = 'slowest';
+                     }
+                     return `
+                     <li class="lap-item">
+                       <div class="lap-info">
+                         <span class="lap-number">#${index + 1}</span>
+                         <span class="lap-time ${highlightClass}">${formatTime(lapTime, false)}</span>
+                       </div>
+                     </li>
+                   `;
+                   }).join('')}
+               </ul>
+             </div>
+           </div>
+         </div>
+       `;
 
       document.getElementById('backBtn').addEventListener('click', renderSessions);
     }
