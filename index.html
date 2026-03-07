@@ -638,6 +638,15 @@
      function updateDisplay() {
        const currentElapsed = isRunning ? Date.now() - startTime + elapsed : elapsed;
        timerEl.textContent = formatTime(currentElapsed, false);
+       
+       // Update the live page timer if there are pages
+       if (laps.length > 0) {
+         const livePageElement = lapList.querySelector('[data-live="true"]');
+         if (livePageElement) {
+           const pageTime = currentElapsed - laps[0].totalSessionTime;
+           livePageElement.textContent = formatTime(pageTime, false);
+         }
+       }
      }
 
      function start() {
@@ -758,18 +767,28 @@
          return;
        }
 
-      emptyState.style.display = 'none';
-      clearLapsBtn.style.display = 'block';
-      
-        lapList.innerHTML = laps.map((lap, index) => `
-          <li class="lap-item">
-            <div class="lap-info">
-              <span class="lap-number">#${lap.number}</span>
-              <span class="lap-time">${formatTime(lap.pageTime, false)}</span>
-            </div>
-            <button class="lap-delete" data-index="${index}">&times;</button>
-          </li>
-        `).join('');
+       emptyState.style.display = 'none';
+       clearLapsBtn.style.display = 'block';
+       
+       lapList.innerHTML = laps.map((lap, index) => {
+         let displayTime;
+         // For the first (latest) page, show the live counting time
+         if (index === 0 && isRunning) {
+           const currentTime = Date.now() - startTime + elapsed;
+           displayTime = currentTime - lap.totalSessionTime;
+         } else {
+           displayTime = lap.pageTime;
+         }
+         return `
+           <li class="lap-item">
+             <div class="lap-info">
+               <span class="lap-number">#${lap.number}</span>
+               <span class="lap-time" data-live="${index === 0 ? 'true' : 'false'}">${formatTime(displayTime, false)}</span>
+             </div>
+             <button class="lap-delete" data-index="${index}">&times;</button>
+           </li>
+         `;
+       }).join('');
 
       lapList.querySelectorAll('.lap-delete').forEach(btn => {
         btn.addEventListener('click', () => deleteLap(parseInt(btn.dataset.index)));
