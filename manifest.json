@@ -2,7 +2,7 @@
   "name": "Reading Stopwatch",
   "short_name": "Stopwatch",
   "description": "A sleek stopwatch for tracking your reading sessions",
-  "start_url": "/",
+  "start_url": "/reading-stopwatch/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",

@@ -1,10 +1,10 @@
-const CACHE_NAME = 'stopwatch-v0.0.6';
+const CACHE_NAME = 'stopwatch-v0.0.7';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/reading-stopwatch/',
+  '/reading-stopwatch/index.html',
+  '/reading-stopwatch/manifest.json',
+  '/reading-stopwatch/icon-192.png',
+  '/reading-stopwatch/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
