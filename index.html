@@ -541,6 +541,24 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
+    .update-prompt {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #000;
+      padding: 0.75rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.875rem;
+      display: none;
+      animation: fadeIn 0.3s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateX(-50%) translateY(10px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -599,6 +617,10 @@
   <div class="install-prompt" id="installPrompt">
     Add to Home Screen
   </div>
+
+  <button class="update-prompt" id="updatePrompt">
+    Update Available
+  </button>
 
   <script>
     const timerEl = document.getElementById('timer');
@@ -954,65 +976,91 @@
         minute: '2-digit'
       });
 
-       const avgTimePerLap = session.laps.length > 0 
-         ? Math.floor(session.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0) / session.laps.length)
-         : 0;
+      function renderSessionDetail() {
+        const currentSession = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]').find(s => s.id === sessionId);
+        if (!currentSession) {
+          renderSessions();
+          return;
+        }
 
-       const lapTimes = session.laps.map(lap => (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0));
-       const shouldHighlight = lapTimes.length > 3;
-       const minTime = Math.min(...lapTimes);
-       const maxTime = Math.max(...lapTimes);
+        const lapTimes = currentSession.laps.map(lap => (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0));
+        const avgTimePerLap = currentSession.laps.length > 0 
+          ? Math.floor(lapTimes.reduce((sum, t) => sum + t, 0) / currentSession.laps.length)
+          : 0;
+        const shouldHighlight = lapTimes.length > 3;
+        const minTime = Math.min(...lapTimes);
+        const maxTime = Math.max(...lapTimes);
 
-      sessionsList.innerHTML = `
-        <div class="session-detail-view open">
-          <div class="session-detail-header">
-            <button id="backBtn" style="padding: 0.5rem; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">‹</button>
-            <div>
-              <h3 style="margin: 0; font-size: 1.125rem;">${session.name}</h3>
-              <div style="font-size: 0.75rem; color: var(--text-dim);">${dateStr}</div>
+        sessionsList.innerHTML = `
+          <div class="session-detail-view open">
+            <div class="session-detail-header">
+              <button id="backBtn" style="padding: 0.5rem; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">‹</button>
+              <div>
+                <h3 style="margin: 0; font-size: 1.125rem;">${currentSession.name}</h3>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">${dateStr}</div>
+              </div>
+            </div>
+            <div style="padding: 0 1rem;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--surface);">
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-dim);">Total Time</div>
+                  <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${formatTime(currentSession.totalTime, false)}</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-dim);">Average</div>
+                  <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${formatTime(avgTimePerLap, false)}</div>
+                </div>
+                 <div>
+                   <div style="font-size: 0.75rem; color: var(--text-dim);">Pages</div>
+                   <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${currentSession.laps.length}</div>
+                 </div>
+             </div>
+               <div class="session-detail-laps">
+                 <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
+                <ul class="lap-list" style="list-style: none;">
+                    ${currentSession.laps.map((lap, index) => {
+                      const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0);
+                      let highlightClass = '';
+                      if (shouldHighlight) {
+                        if (lapTime === minTime) highlightClass = 'fastest';
+                        else if (lapTime === maxTime) highlightClass = 'slowest';
+                      }
+                      return `
+                      <li class="lap-item">
+                        <div class="lap-info">
+                          <span class="lap-number">#${index + 1}</span>
+                          <span class="lap-time ${highlightClass}">${formatTime(lapTime, false)}</span>
+                        </div>
+                        <button class="lap-delete" data-session-id="${sessionId}" data-index="${index}">&times;</button>
+                      </li>
+                    `;
+                    }).join('')}
+                </ul>
+              </div>
             </div>
           </div>
-          <div style="padding: 0 1rem;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--surface);">
-              <div>
-                <div style="font-size: 0.75rem; color: var(--text-dim);">Total Time</div>
-                <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${formatTime(session.totalTime, false)}</div>
-              </div>
-              <div>
-                <div style="font-size: 0.75rem; color: var(--text-dim);">Average</div>
-                <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${formatTime(avgTimePerLap, false)}</div>
-              </div>
-               <div>
-                 <div style="font-size: 0.75rem; color: var(--text-dim);">Pages</div>
-                 <div style="font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.25rem; margin-top: 0.5rem;">${session.laps.length}</div>
-               </div>
-            </div>
-              <div class="session-detail-laps">
-                <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
-               <ul class="lap-list" style="list-style: none;">
-                   ${session.laps.map((lap, index) => {
-                     const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0);
-                     let highlightClass = '';
-                     if (shouldHighlight) {
-                       if (lapTime === minTime) highlightClass = 'fastest';
-                       else if (lapTime === maxTime) highlightClass = 'slowest';
-                     }
-                     return `
-                     <li class="lap-item">
-                       <div class="lap-info">
-                         <span class="lap-number">#${index + 1}</span>
-                         <span class="lap-time ${highlightClass}">${formatTime(lapTime, false)}</span>
-                       </div>
-                     </li>
-                   `;
-                   }).join('')}
-               </ul>
-             </div>
-           </div>
-         </div>
-       `;
+        `;
 
-      document.getElementById('backBtn').addEventListener('click', renderSessions);
+        document.getElementById('backBtn').addEventListener('click', renderSessions);
+
+        sessionsList.querySelectorAll('.lap-delete').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const sessionIdToUpdate = btn.dataset.sessionId;
+            const indexToDelete = parseInt(btn.dataset.index);
+            const allSessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
+            const sessionToUpdate = allSessions.find(s => s.id === sessionIdToUpdate);
+            if (sessionToUpdate) {
+              sessionToUpdate.laps.splice(indexToDelete, 1);
+              const newTotalTime = sessionToUpdate.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0);
+              sessionToUpdate.totalTime = newTotalTime;
+              localStorage.setItem('stopwatchSessions', JSON.stringify(allSessions));
+              renderSessionDetail();
+            }
+          });
+        });
+      }
+
+      renderSessionDetail();
     }
 
     startBtn.addEventListener('click', () => {
@@ -1061,9 +1109,30 @@
     });
 
     // PWA Service Worker
+    const updatePrompt = document.getElementById('updatePrompt');
+    let swRegistration = null;
+
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(console.error);
+      navigator.serviceWorker.register('sw.js').then(registration => {
+        swRegistration = registration;
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              updatePrompt.style.display = 'block';
+            }
+          });
+        });
+      }).catch(console.error);
     }
+
+    updatePrompt.addEventListener('click', () => {
+      if (swRegistration) {
+        swRegistration.unregister().then(() => {
+          window.location.reload();
+        });
+      }
+    });
 
     // Install Prompt
     let deferredPrompt;
