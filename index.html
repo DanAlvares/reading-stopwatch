@@ -652,6 +652,64 @@
     let pageCount = 0;
     let wakeLock = null;
 
+    function saveSessionState() {
+      const state = {
+        isRunning,
+        isPaused,
+        startTime,
+        elapsed,
+        laps,
+        pageCount
+      };
+      localStorage.setItem('currentSessionState', JSON.stringify(state));
+    }
+
+    function clearSessionState() {
+      localStorage.removeItem('currentSessionState');
+    }
+
+    function restoreSessionState() {
+      const saved = localStorage.getItem('currentSessionState');
+      if (!saved) return;
+
+      try {
+        const state = JSON.parse(saved);
+        isRunning = false;
+        isPaused = state.isPaused;
+        startTime = 0;
+        elapsed = state.elapsed;
+        laps = state.laps || [];
+        pageCount = state.pageCount || 0;
+
+        if (state.isRunning) {
+          elapsed += Date.now() - state.startTime;
+          isPaused = true;
+          isRunning = false;
+        }
+
+        renderLaps();
+        updateDisplay();
+
+        if (isPaused) {
+          timerLabelEl.textContent = 'Paused';
+          startBtn.textContent = 'Resume';
+          startBtn.classList.remove('btn-start');
+          startBtn.classList.add('btn-pause');
+          newPageBtn.disabled = false;
+          newPageBtn.style.display = 'inline-block';
+          endBtn.style.display = 'inline-block';
+        } else if (laps.length > 0) {
+          timerLabelEl.textContent = 'Ended';
+          newPageBtn.disabled = true;
+          newPageBtn.style.display = 'none';
+          resetBtn.style.display = 'inline-block';
+          showSaveModal();
+        }
+      } catch (e) {
+        console.error('Failed to restore session:', e);
+      }
+    }
+
     async function requestWakeLock() {
       try {
         wakeLock = await navigator.wakeLock.request('screen');
@@ -719,6 +777,7 @@
        addSplit();
        
        timerInterval = setInterval(updateDisplay, 10);
+       saveSessionState();
      }
 
      function pause() {
@@ -733,6 +792,7 @@
        endBtn.style.display = 'inline-block';
        
        releaseWakeLock();
+       saveSessionState();
      }
 
      function resume() {
@@ -746,6 +806,7 @@
        endBtn.style.display = 'none';
        
        timerInterval = setInterval(updateDisplay, 10);
+       saveSessionState();
      }
 
     function end() {
@@ -762,6 +823,7 @@
       resetBtn.style.display = 'inline-block';
       
       releaseWakeLock();
+      clearSessionState();
       showSaveModal();
     }
 
@@ -785,6 +847,7 @@
        resetBtn.style.display = 'none';
        
        releaseWakeLock();
+       clearSessionState();
        renderLaps();
      }
 
@@ -807,16 +870,19 @@
          number: pageCount
        });
        renderLaps();
+       saveSessionState();
      }
 
      function deleteLap(index) {
        laps.splice(index, 1);
        renderLaps();
+       saveSessionState();
      }
 
     function clearLaps() {
       laps = [];
       renderLaps();
+      saveSessionState();
     }
 
      function renderLaps() {
@@ -1134,20 +1200,16 @@
       }
     });
 
-    // Install Prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installPrompt.style.display = 'block';
-    });
+    // Restore session on page load
+    restoreSessionState();
 
-    installPrompt.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      installPrompt.style.display = 'none';
+    // Save session state before leaving
+    window.addEventListener('beforeunload', () => {
+      if (isRunning) {
+        elapsed += Date.now() - startTime;
+        isRunning = false;
+      }
+      saveSessionState();
     });
   </script>
 </body>
