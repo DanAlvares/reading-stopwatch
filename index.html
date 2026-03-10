@@ -564,12 +564,6 @@
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    @keyframes flash {
-      0% { background: var(--bg); }
-      50% { background: #fff; }
-      100% { background: var(--bg); }
-    }
-
     .flash-overlay {
       position: fixed;
       inset: 0;
@@ -577,6 +571,7 @@
       pointer-events: none;
       opacity: 0;
       z-index: 9999;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
     .flash-overlay.active {
@@ -587,10 +582,6 @@
       0% { opacity: 0; }
       50% { opacity: 1; }
       100% { opacity: 0; }
-    }
-
-    .flash-active {
-      animation: flash .5s ease;
     }
 
     .mic-indicator {
