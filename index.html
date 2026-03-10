@@ -563,9 +563,61 @@
       from { opacity: 0; transform: translateX(-50%) translateY(10px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
+
+    @keyframes flash {
+      0% { background: var(--bg); }
+      50% { background: #fff; }
+      100% { background: var(--bg); }
+    }
+
+    .flash-overlay {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 9999;
+    }
+
+    .flash-overlay.active {
+      animation: flash .35s ease-out;
+    }
+
+    @keyframes flash {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .flash-active {
+      animation: flash .5s ease;
+    }
+
+    .mic-indicator {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: none;
+    }
+
+    .mic-indicator.listening {
+      display: block;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
   </style>
 </head>
 <body>
+  <div class="flash-overlay" id="flashOverlay"></div>
+  <div class="mic-indicator" id="micIndicator"></div>
   <div class="app">
     <header>
       <h1>Reading Stopwatch</h1>
@@ -641,6 +693,7 @@
     const saveBtn = document.getElementById('saveBtn');
     const discardBtn = document.getElementById('discardBtn');
     const installPrompt = document.getElementById('installPrompt');
+    const micIndicator = document.getElementById('micIndicator');
 
     let isRunning = false;
     let isPaused = false;
@@ -651,6 +704,62 @@
     let currentSessionId = null;
     let pageCount = 0;
     let wakeLock = null;
+    let speechRecognition = null;
+    let lastPageTrigger = 0;
+
+    function flashScreen() {
+      const overlay = document.getElementById('flashOverlay');
+      overlay.classList.remove('active');
+      void overlay.offsetWidth;
+      overlay.classList.add('active');
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 1000);
+    }
+
+    function startSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.continuous = true;
+      speechRecognition.interimResults = false;
+      speechRecognition.lang = 'en-US';
+
+      speechRecognition.onresult = (event) => {
+        const now = Date.now();
+        if (now - lastPageTrigger < 500) return;
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript.toLowerCase();
+          if (transcript.includes('page')) {
+            lastPageTrigger = now;
+            flashScreen();
+            addSplit();
+            break;
+          }
+        }
+      };
+
+      speechRecognition.onerror = (event) => {
+        console.log('Speech recognition error:', event.error);
+      };
+
+      speechRecognition.start();
+      micIndicator.classList.add('listening');
+    }
+
+    function stopSpeechRecognition() {
+      if (speechRecognition) {
+        try {
+          speechRecognition.stop();
+        } catch (e) {}
+        speechRecognition = null;
+      }
+      micIndicator.classList.remove('listening');
+    }
 
     function saveSessionState() {
       const state = {
@@ -773,6 +882,7 @@
        resetBtn.style.display = 'none';
        
        requestWakeLock();
+       startSpeechRecognition();
        
        addSplit();
        
@@ -792,6 +902,7 @@
        endBtn.style.display = 'inline-block';
        
        releaseWakeLock();
+       stopSpeechRecognition();
        saveSessionState();
      }
 
@@ -805,6 +916,7 @@
        newPageBtn.style.display = 'inline-block';
        endBtn.style.display = 'none';
        
+       startSpeechRecognition();
        timerInterval = setInterval(updateDisplay, 10);
        saveSessionState();
      }
@@ -823,6 +935,7 @@
       resetBtn.style.display = 'inline-block';
       
       releaseWakeLock();
+      stopSpeechRecognition();
       clearSessionState();
       showSaveModal();
     }
@@ -847,6 +960,7 @@
        resetBtn.style.display = 'none';
        
        releaseWakeLock();
+       stopSpeechRecognition();
        clearSessionState();
        renderLaps();
      }
@@ -869,6 +983,7 @@
          totalSessionTime: currentTime,
          number: pageCount
        });
+       flashScreen();
        renderLaps();
        saveSessionState();
      }
