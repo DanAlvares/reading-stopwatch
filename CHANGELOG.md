@@ -4,6 +4,15 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.2.1] - 2025-03-10
+
+### Added
+- Rename sessions from the history detail view
+- Click the pencil icon to edit the session name
+- Press Enter to save, Escape to cancel
+
+---
+
 ## [0.2.0] - 2025-03-10
 
 ### Added

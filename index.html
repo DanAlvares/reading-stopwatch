@@ -1167,8 +1167,11 @@
           <div class="session-detail-view open">
             <div class="session-detail-header">
               <button id="backBtn" style="padding: 0.5rem; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">‹</button>
-              <div>
-                <h3 style="margin: 0; font-size: 1.125rem;">${currentSession.name}</h3>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <div id="sessionNameDisplay" style="margin: 0; font-size: 1.125rem; cursor: pointer;">${currentSession.name}</div>
+                  <button id="renameBtn" style="background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer; padding: 0.5rem;">✎</button>
+                </div>
                 <div style="font-size: 0.75rem; color: var(--text-dim);">${dateStr}</div>
               </div>
             </div>
@@ -1214,6 +1217,35 @@
         `;
 
         document.getElementById('backBtn').addEventListener('click', renderSessions);
+
+        document.getElementById('renameBtn').addEventListener('click', () => {
+          const nameDisplay = document.getElementById('sessionNameDisplay');
+          const currentName = currentSession.name;
+          nameDisplay.innerHTML = `<input type="text" id="renameInput" value="${currentName}" style="background: var(--surface); border: 1px solid var(--accent); color: var(--text); font-size: 1.125rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem; width: 100%;">`;
+          const input = document.getElementById('renameInput');
+          input.focus();
+          input.select();
+
+          const saveName = () => {
+            const newName = input.value.trim() || currentName;
+            const allSessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
+            const sessionToRename = allSessions.find(s => s.id === sessionId);
+            if (sessionToRename) {
+              sessionToRename.name = newName;
+              localStorage.setItem('stopwatchSessions', JSON.stringify(allSessions));
+            }
+            renderSessionDetail();
+          };
+
+          input.addEventListener('blur', saveName);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              input.blur();
+            } else if (e.key === 'Escape') {
+              renderSessionDetail();
+            }
+          });
+        });
 
         sessionsList.querySelectorAll('.lap-delete').forEach(btn => {
           btn.addEventListener('click', (e) => {
