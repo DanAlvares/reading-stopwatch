@@ -4,6 +4,14 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.2.2] - 2025-03-11
+
+### Added
+- Pull-to-refresh gesture to reload the app
+- Drag down from the top of the screen to refresh (requires 100px+ pull with velocity)
+
+---
+
 ## [0.2.1] - 2025-03-10
 
 ### Added

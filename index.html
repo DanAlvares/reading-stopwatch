@@ -1288,6 +1288,39 @@
       historyPanel.classList.add('open');
     });
 
+    let pullStartY = 0;
+    let pullStartTime = 0;
+    const appEl = document.querySelector('.app');
+
+    appEl.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1 && appEl.scrollTop === 0) {
+        pullStartY = e.touches[0].clientY;
+        pullStartTime = Date.now();
+      }
+    }, { passive: true });
+
+    appEl.addEventListener('touchmove', (e) => {
+      if (pullStartY > 0 && appEl.scrollTop === 0) {
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - pullStartY;
+        if (diff > 0) {
+          e.preventDefault();
+        }
+      }
+    }, { passive: false });
+
+    appEl.addEventListener('touchend', (e) => {
+      if (pullStartY > 0) {
+        const pullEndY = e.changedTouches[0].clientY;
+        const diff = pullEndY - pullStartY;
+        const duration = Date.now() - pullStartTime;
+        if (diff > 100 && diff > duration * 0.3) {
+          window.location.reload();
+        }
+        pullStartY = 0;
+      }
+    });
+
     closeHistory.addEventListener('click', () => {
       historyPanel.classList.remove('open');
     });
