@@ -4,6 +4,17 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.2.3] - 2026-03-20
+
+### Removed
+- Voice detection feature (Speech Recognition API)
+
+### Fixed
+- Page times now display in correct order (page 1 at top, newest page at bottom)
+- Zero-second page entry removed when ending a session
+
+---
+
 ## [0.2.2] - 2025-03-11
 
 ### Added

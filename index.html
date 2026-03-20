@@ -584,22 +584,6 @@
       100% { opacity: 0; }
     }
 
-    .mic-indicator {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      width: 8px;
-      height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      display: none;
-    }
-
-    .mic-indicator.listening {
-      display: block;
-      animation: pulse 1.5s infinite;
-    }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
@@ -608,7 +592,6 @@
 </head>
 <body>
   <div class="flash-overlay" id="flashOverlay"></div>
-  <div class="mic-indicator" id="micIndicator"></div>
   <div class="app">
     <header>
       <h1>Reading Stopwatch</h1>
@@ -684,7 +667,6 @@
     const saveBtn = document.getElementById('saveBtn');
     const discardBtn = document.getElementById('discardBtn');
     const installPrompt = document.getElementById('installPrompt');
-    const micIndicator = document.getElementById('micIndicator');
 
     let isRunning = false;
     let isPaused = false;
@@ -695,8 +677,6 @@
     let currentSessionId = null;
     let pageCount = 0;
     let wakeLock = null;
-    let speechRecognition = null;
-    let lastPageTrigger = 0;
 
     function flashScreen() {
       const overlay = document.getElementById('flashOverlay');
@@ -706,50 +686,6 @@
       setTimeout(() => {
         overlay.classList.remove('active');
       }, 1000);
-    }
-
-    function startSpeechRecognition() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        return;
-      }
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      speechRecognition = new SpeechRecognition();
-      speechRecognition.continuous = true;
-      speechRecognition.interimResults = false;
-      speechRecognition.lang = 'en-US';
-
-      speechRecognition.onresult = (event) => {
-        const now = Date.now();
-        if (now - lastPageTrigger < 500) return;
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.toLowerCase();
-          if (transcript.includes('page')) {
-            lastPageTrigger = now;
-            flashScreen();
-            addSplit();
-            break;
-          }
-        }
-      };
-
-      speechRecognition.onerror = (event) => {
-        console.log('Speech recognition error:', event.error);
-      };
-
-      speechRecognition.start();
-      micIndicator.classList.add('listening');
-    }
-
-    function stopSpeechRecognition() {
-      if (speechRecognition) {
-        try {
-          speechRecognition.stop();
-        } catch (e) {}
-        speechRecognition = null;
-      }
-      micIndicator.classList.remove('listening');
     }
 
     function saveSessionState() {
@@ -795,8 +731,8 @@
           startBtn.textContent = 'Resume';
           startBtn.classList.remove('btn-start');
           startBtn.classList.add('btn-pause');
-          newPageBtn.disabled = false;
-          newPageBtn.style.display = 'inline-block';
+          newPageBtn.disabled = true;
+          newPageBtn.style.display = 'none';
           endBtn.style.display = 'inline-block';
         } else if (laps.length > 0) {
           timerLabelEl.textContent = 'Ended';
@@ -873,9 +809,8 @@
        resetBtn.style.display = 'none';
        
        requestWakeLock();
-       startSpeechRecognition();
-       
-       addSplit();
+        
+        addSplit();
        
        timerInterval = setInterval(updateDisplay, 10);
        saveSessionState();
@@ -893,11 +828,10 @@
        endBtn.style.display = 'inline-block';
        
        releaseWakeLock();
-       stopSpeechRecognition();
-       saveSessionState();
-     }
+        saveSessionState();
+      }
 
-     function resume() {
+      function resume() {
        isRunning = true;
        isPaused = false;
        startTime = Date.now();
@@ -907,10 +841,9 @@
        newPageBtn.style.display = 'inline-block';
        endBtn.style.display = 'none';
        
-       startSpeechRecognition();
        timerInterval = setInterval(updateDisplay, 10);
-       saveSessionState();
-     }
+        saveSessionState();
+      }
 
     function end() {
       if (isRunning) {
@@ -925,8 +858,7 @@
       endBtn.style.display = 'none';
       resetBtn.style.display = 'inline-block';
       
-      releaseWakeLock();
-      stopSpeechRecognition();
+       releaseWakeLock();
       clearSessionState();
       showSaveModal();
     }
@@ -951,10 +883,9 @@
        resetBtn.style.display = 'none';
        
        releaseWakeLock();
-       stopSpeechRecognition();
-       clearSessionState();
-       renderLaps();
-     }
+      clearSessionState();
+      renderLaps();
+    }
 
      function addSplit() {
        const currentTime = Date.now() - startTime + elapsed;
@@ -1013,31 +944,32 @@
        const minTime = Math.min(...lapTimes);
        const maxTime = Math.max(...lapTimes);
        
-       lapList.innerHTML = laps.map((lap, index) => {
-         let displayTime;
-         if (index === 0 && isRunning) {
-           const currentTime = Date.now() - startTime + elapsed;
-           displayTime = currentTime - lap.totalSessionTime;
-         } else {
-           displayTime = lap.pageTime;
-         }
-         
-         let highlightClass = '';
-         if (shouldHighlight && !(index === 0 && isRunning)) {
-           if (displayTime === minTime) highlightClass = 'fastest';
-           else if (displayTime === maxTime) highlightClass = 'slowest';
-         }
-         
-         return `
-           <li class="lap-item">
-             <div class="lap-info">
-               <span class="lap-number">#${lap.number}</span>
-               <span class="lap-time ${highlightClass}" data-live="${index === 0 ? 'true' : 'false'}">${formatTime(displayTime, false)}</span>
-             </div>
-             <button class="lap-delete" data-index="${index}">&times;</button>
-           </li>
-         `;
-       }).join('');
+        lapList.innerHTML = laps.slice().reverse().map((lap, displayIndex) => {
+          const originalIndex = laps.length - 1 - displayIndex;
+          let displayTime;
+          if (originalIndex === 0 && isRunning) {
+            const currentTime = Date.now() - startTime + elapsed;
+            displayTime = currentTime - lap.totalSessionTime;
+          } else {
+            displayTime = lap.pageTime;
+          }
+          
+          let highlightClass = '';
+          if (shouldHighlight && !(originalIndex === 0 && isRunning)) {
+            if (displayTime === minTime) highlightClass = 'fastest';
+            else if (displayTime === maxTime) highlightClass = 'slowest';
+          }
+          
+          return `
+            <li class="lap-item">
+              <div class="lap-info">
+                <span class="lap-number">#${lap.number}</span>
+                <span class="lap-time ${highlightClass}" data-live="${originalIndex === 0 ? 'true' : 'false'}">${formatTime(displayTime, false)}</span>
+              </div>
+              <button class="lap-delete" data-index="${originalIndex}">&times;</button>
+            </li>
+          `;
+        }).join('');
 
        lapList.querySelectorAll('.lap-delete').forEach(btn => {
          btn.addEventListener('click', () => deleteLap(parseInt(btn.dataset.index)));
@@ -1055,6 +987,9 @@
     }
 
     function saveSession(name) {
+      if (laps.length > 0) {
+        laps[0].pageTime = elapsed - laps[0].totalSessionTime;
+      }
       const sessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
       const session = {
         id: Date.now().toString(),
@@ -1193,7 +1128,7 @@
                <div class="session-detail-laps">
                  <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
                 <ul class="lap-list" style="list-style: none;">
-                    ${currentSession.laps.map((lap, index) => {
+                    ${currentSession.laps.slice().reverse().map((lap, index) => {
                       const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0);
                       let highlightClass = '';
                       if (shouldHighlight) {
@@ -1250,11 +1185,12 @@
         sessionsList.querySelectorAll('.lap-delete').forEach(btn => {
           btn.addEventListener('click', (e) => {
             const sessionIdToUpdate = btn.dataset.sessionId;
-            const indexToDelete = parseInt(btn.dataset.index);
+            const displayIndex = parseInt(btn.dataset.index);
+            const originalIndex = currentSession.laps.length - 1 - displayIndex;
             const allSessions = JSON.parse(localStorage.getItem('stopwatchSessions') || '[]');
             const sessionToUpdate = allSessions.find(s => s.id === sessionIdToUpdate);
             if (sessionToUpdate) {
-              sessionToUpdate.laps.splice(indexToDelete, 1);
+              sessionToUpdate.laps.splice(originalIndex, 1);
               const newTotalTime = sessionToUpdate.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0);
               sessionToUpdate.totalTime = newTotalTime;
               localStorage.setItem('stopwatchSessions', JSON.stringify(allSessions));
