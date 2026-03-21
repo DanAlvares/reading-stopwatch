@@ -4,6 +4,14 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.2.5] - 2026-03-21
+
+### Fixed
+- Page numbering now displays with highest number at top in session history detail
+- Fixed "New Page" button being disabled after resuming a restored session
+
+---
+
 ## [0.2.4] - 2026-03-21
 
 ### Added

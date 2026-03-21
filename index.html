@@ -898,16 +898,17 @@
       }
 
       function resume() {
-       isRunning = true;
-       isPaused = false;
-       startTime = Date.now();
-       timerLabelEl.textContent = 'Running';
-       startBtn.textContent = 'Pause';
-       startBtn.classList.add('running');
-       newPageBtn.style.display = 'inline-block';
-       endBtn.style.display = 'none';
-       
-       timerInterval = setInterval(updateDisplay, 10);
+        isRunning = true;
+        isPaused = false;
+        startTime = Date.now();
+        timerLabelEl.textContent = 'Running';
+        startBtn.textContent = 'Pause';
+        startBtn.classList.add('running');
+        newPageBtn.disabled = false;
+        newPageBtn.style.display = 'inline-block';
+        endBtn.style.display = 'none';
+        
+        timerInterval = setInterval(updateDisplay, 10);
         
         startSpeechRecognition();
         saveSessionState();
@@ -1197,8 +1198,9 @@
                <div class="session-detail-laps">
                  <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Page Times</div>
                 <ul class="lap-list" style="list-style: none;">
-                    ${currentSession.laps.map((lap, index) => {
+                     ${currentSession.laps.map((lap, index) => {
                       const lapTime = (lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0);
+                      const displayNumber = currentSession.laps.length - index;
                       let highlightClass = '';
                       if (shouldHighlight) {
                         if (lapTime === minTime) highlightClass = 'fastest';
@@ -1207,7 +1209,7 @@
                       return `
                       <li class="lap-item">
                         <div class="lap-info">
-                          <span class="lap-number">#${index + 1}</span>
+                          <span class="lap-number">#${displayNumber}</span>
                           <span class="lap-time ${highlightClass}">${formatTime(lapTime, false)}</span>
                         </div>
                         <button class="lap-delete" data-session-id="${sessionId}" data-index="${index}">&times;</button>
