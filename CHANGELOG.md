@@ -4,6 +4,19 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.2.4] - 2026-03-21
+
+### Added
+- Voice control for hands-free page tracking (re-implemented)
+- Speech Recognition API listens for "page" keyword while timer is running
+- Triggers on any phrase containing "page" (case-insensitive, e.g., "new page", "next page")
+- Screen flash feedback when page is detected (via voice OR button)
+- Microphone indicator (pulsing green dot) shows when voice recognition is active
+- 500ms debounce prevents multiple triggers from single utterance
+- Gracefully disabled if browser doesn't support Speech Recognition (Chrome, Edge, Safari 14.1+)
+
+---
+
 ## [0.2.3] - 2026-03-20
 
 ### Removed
