@@ -4,6 +4,13 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.2.6] - 2026-03-21
+
+### Fixed
+- Clicking outside save modal no longer resets the session
+
+---
+
 ## [0.2.5] - 2026-03-21
 
 ### Fixed
