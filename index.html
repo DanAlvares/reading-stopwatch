@@ -1337,7 +1337,6 @@
 
     discardBtn.addEventListener('click', () => {
       hideSaveModal();
-      reset();
     });
 
     sessionNameInput.addEventListener('keydown', (e) => {
@@ -1347,7 +1346,6 @@
     saveModal.addEventListener('click', (e) => {
       if (e.target === saveModal) {
         hideSaveModal();
-        reset();
       }
     });
 
