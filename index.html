@@ -344,6 +344,46 @@
       font-weight: 600;
     }
 
+    .history-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .copy-sessions-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .copy-sessions-btn:hover {
+      opacity: 1;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
     .close-btn {
       background: none;
       border: none;
@@ -640,11 +680,15 @@
 
   <div class="history-panel" id="historyPanel">
     <div class="history-header">
-      <h2>Sessions</h2>
+      <div class="history-header-left">
+        <h2>Sessions</h2>
+        <button class="copy-sessions-btn" id="copySessions" title="Copy all sessions">📋</button>
+      </div>
       <button class="close-btn" id="closeHistory">&times;</button>
     </div>
     <div id="sessionsList"></div>
   </div>
+  <div class="toast" id="toast">Copied!</div>
 
   <div class="modal-overlay" id="saveModal">
     <div class="modal">
@@ -1329,6 +1373,15 @@
 
     closeHistory.addEventListener('click', () => {
       historyPanel.classList.remove('open');
+    });
+
+    const toast = document.getElementById('toast');
+    document.getElementById('copySessions').addEventListener('click', () => {
+      const sessions = localStorage.getItem('stopwatchSessions') || '[]';
+      navigator.clipboard.writeText(sessions).then(() => {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      });
     });
 
     saveBtn.addEventListener('click', () => {
