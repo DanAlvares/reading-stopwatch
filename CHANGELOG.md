@@ -4,6 +4,17 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.3.0] - 2026-03-21
+
+### Added
+- Session grouping in history view
+- Sessions with the same name (2+) are grouped into collapsible accordions
+- Group header shows name, session count, and average time per page
+- Groups are sorted alphabetically
+- Single sessions or sessions with unique names appear individually
+
+---
+
 ## [0.2.6] - 2026-03-21
 
 ### Fixed

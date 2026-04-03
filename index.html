@@ -422,6 +422,63 @@
       opacity: 0.8;
     }
 
+    .session-group {
+      border-bottom: 1px solid var(--surface);
+    }
+
+    .session-group-header {
+      padding: 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      transition: background 0.2s;
+    }
+
+    .session-group-header:hover {
+      background: var(--surface-hover);
+    }
+
+    .session-group-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .session-group-chevron {
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+
+    .session-group.open .session-group-chevron {
+      transform: rotate(90deg);
+    }
+
+    .session-group-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .session-group-count {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .session-group-avg {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      font-family: 'SF Mono', 'Menlo', monospace;
+    }
+
+    .session-group-content {
+      display: none;
+    }
+
+    .session-group.open .session-group-content {
+      display: block;
+    }
+
     .session-detail-view {
       display: none;
     }
@@ -1081,43 +1138,66 @@
         return;
       }
 
-      sessionsList.innerHTML = sessions.map(session => {
-        const date = new Date(session.date);
-        const dateStr = date.toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          month: 'short', 
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit'
-        });
-        
-         const avgTimePerLap = session.laps.length > 0 
-           ? Math.floor(session.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0) / session.laps.length)
-           : 0;
-        
-        return `
-          <div class="session-item clickable" data-id="${session.id}">
-            <div class="session-details">
-              <div class="session-date">${dateStr}</div>
-              <div class="session-time">${formatTime(session.totalTime, false)}</div>
-              <div class="session-stats">
-                <div class="session-stat">
-                   <span>${session.laps.length} ${session.laps.length === 1 ? 'page' : 'pages'}</span>
-                 </div>
-                 <div class="session-stat">
-                   <span class="session-stat-value">${formatTime(avgTimePerLap, false)}/page</span>
-                 </div>
-                ${session.name !== `Session ${sessions.indexOf(session) + 1}` ? `
-                <div class="session-stat">
-                  <span>${session.name}</span>
+      const groups = {};
+      const ungrouped = [];
+
+      sessions.forEach((session, originalIndex) => {
+        const isDefaultName = session.name === `Session ${originalIndex + 1}` || session.name.startsWith('Session ');
+        if (isDefaultName || !session.name) {
+          ungrouped.push(session);
+        } else {
+          if (!groups[session.name]) {
+            groups[session.name] = [];
+          }
+          groups[session.name].push(session);
+        }
+      });
+
+      let html = '';
+
+      Object.keys(groups).sort().forEach(groupName => {
+        const groupSessions = groups[groupName];
+        if (groupSessions.length < 2) {
+          groupSessions.forEach(session => {
+            html += renderSessionItem(session, sessions);
+          });
+        } else {
+          const allLaps = groupSessions.flatMap(s => s.laps);
+          const totalPageTime = allLaps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0);
+          const avgTimePerPage = allLaps.length > 0 
+            ? Math.floor(totalPageTime / allLaps.length)
+            : 0;
+
+          html += `
+            <div class="session-group" data-group="${groupName}">
+              <div class="session-group-header">
+                <div class="session-group-header-left">
+                  <span class="session-group-chevron">&#9658;</span>
+                  <span class="session-group-name">${groupName}</span>
+                  <span class="session-group-count">${groupSessions.length} sessions</span>
                 </div>
-                ` : ''}
+                <span class="session-group-avg">${formatTime(avgTimePerPage, false)}/page avg</span>
+              </div>
+              <div class="session-group-content">
+                ${groupSessions.map(session => renderSessionItem(session, sessions)).join('')}
               </div>
             </div>
-            <button class="session-delete" data-id="${session.id}">×</button>
-          </div>
-        `;
-      }).join('');
+          `;
+        }
+      });
+
+      ungrouped.forEach(session => {
+        html += renderSessionItem(session, sessions);
+      });
+
+      sessionsList.innerHTML = html;
+
+      sessionsList.querySelectorAll('.session-group').forEach(group => {
+        const header = group.querySelector('.session-group-header');
+        header.addEventListener('click', () => {
+          group.classList.toggle('open');
+        });
+      });
 
       sessionsList.querySelectorAll('.session-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -1138,6 +1218,46 @@
           renderSessions();
         });
       });
+    }
+
+    function renderSessionItem(session, allSessions) {
+      const date = new Date(session.date);
+      const dateStr = date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      
+      const avgTimePerLap = session.laps.length > 0 
+        ? Math.floor(session.laps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0) / session.laps.length)
+        : 0;
+      
+      const isDefaultName = session.name.startsWith('Session ');
+      
+      return `
+        <div class="session-item clickable" data-id="${session.id}">
+          <div class="session-details">
+            <div class="session-date">${dateStr}</div>
+            <div class="session-time">${formatTime(session.totalTime, false)}</div>
+            <div class="session-stats">
+              <div class="session-stat">
+                <span>${session.laps.length} ${session.laps.length === 1 ? 'page' : 'pages'}</span>
+              </div>
+              <div class="session-stat">
+                <span class="session-stat-value">${formatTime(avgTimePerLap, false)}/page</span>
+              </div>
+              ${!isDefaultName ? `
+              <div class="session-stat">
+                <span>${session.name}</span>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+          <button class="session-delete" data-id="${session.id}">×</button>
+        </div>
+      `;
     }
 
     function showSessionDetail(sessionId, sessions) {
