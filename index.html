@@ -332,7 +332,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.5rem 1rem;
+      padding: .5rem 1rem;
       border-bottom: 1px solid var(--surface);
       position: sticky;
       top: 0;
@@ -367,6 +367,7 @@
 
     .boox-toggle {
       display: flex;
+      justify-content: flex-end;
       align-items: center;
       gap: 0.5rem;
       padding: 0.75rem 1rem;
@@ -422,6 +423,7 @@
       padding: .75rem;
       cursor: pointer;
       display: flex;
+      border-bottom: solid 1px #333;
       justify-content: space-between;
       align-items: center;
       background: var(--surface);
@@ -434,7 +436,7 @@
 
     .session-group-header-left {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.5rem;
     }
 
@@ -442,6 +444,7 @@
       width: 16px;
       height: 16px;
       flex-shrink: 0;
+      margin-top: 2px;
       transition: transform 0.2s;
     }
 
@@ -1266,9 +1269,9 @@
       });
 
       let html = `<label class="boox-toggle">
+        Show Boox
         <input type="checkbox" id="booxToggle" ${showBooxSessions ? 'checked' : ''}>
         <span class="toggle-switch"></span>
-        Show Boox
       </label>`;
 
       Object.keys(groups).sort().forEach(groupKey => {
@@ -1287,7 +1290,7 @@
             : 0;
 
           html += `
-            <div class="session-group open" data-group="${group.name}">
+            <div class="session-group" data-group="${group.name}">
               <div class="session-group-header">
                 <div class="session-group-header-left">
                   <svg class="session-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1378,11 +1381,6 @@
               <div class="session-stat">
                 <span class="session-stat-value">${formatTime(avgTimePerLap, false)}/page</span>
               </div>
-              ${!isDefaultName ? `
-              <div class="session-stat">
-                <span>${session.name}</span>
-              </div>
-              ` : ''}
             </div>
           </div>
           <button class="session-delete" data-id="${session.id}">×</button>
