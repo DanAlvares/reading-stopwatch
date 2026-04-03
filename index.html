@@ -422,6 +422,55 @@
       opacity: 0.8;
     }
 
+    .boox-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .boox-toggle:hover {
+      color: var(--text);
+    }
+
+    .boox-toggle input {
+      display: none;
+    }
+
+    .boox-toggle .toggle-switch {
+      width: 36px;
+      height: 20px;
+      background: var(--surface);
+      border-radius: 10px;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .boox-toggle .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s, background 0.2s;
+    }
+
+    .boox-toggle input:checked + .toggle-switch {
+      background: var(--accent);
+    }
+
+    .boox-toggle input:checked + .toggle-switch::after {
+      left: 18px;
+      background: white;
+    }
+
     .session-group {
       border-bottom: 1px solid var(--surface);
     }
@@ -754,6 +803,7 @@
     let wakeLock = null;
     let speechRecognition = null;
     let lastPageTrigger = 0;
+    let showBooxSessions = false;
 
     function flashScreen() {
       const overlay = document.getElementById('flashOverlay');
@@ -1142,21 +1192,30 @@
       const ungrouped = [];
 
       sessions.forEach((session, originalIndex) => {
-        const isDefaultName = session.name === `Session ${originalIndex + 1}` || session.name.startsWith('Session ');
+        const isBoox = session.name.toLowerCase().includes('boox');
+        if (!showBooxSessions && isBoox) return;
+
+        const isDefaultName = session.name === `Session ${originalIndex + 1}` || session.name.toLowerCase().startsWith('session ');
         if (isDefaultName || !session.name) {
           ungrouped.push(session);
         } else {
-          if (!groups[session.name]) {
-            groups[session.name] = [];
+          const groupKey = session.name.toLowerCase();
+          if (!groups[groupKey]) {
+            groups[groupKey] = { name: session.name, sessions: [] };
           }
-          groups[session.name].push(session);
+          groups[groupKey].sessions.push(session);
         }
       });
 
-      let html = '';
+      let html = `<label class="boox-toggle">
+        <input type="checkbox" id="booxToggle" ${showBooxSessions ? 'checked' : ''}>
+        <span class="toggle-switch"></span>
+        Show Boox
+      </label>`;
 
-      Object.keys(groups).sort().forEach(groupName => {
-        const groupSessions = groups[groupName];
+      Object.keys(groups).sort().forEach(groupKey => {
+        const group = groups[groupKey];
+        const groupSessions = group.sessions;
         if (groupSessions.length < 2) {
           groupSessions.forEach(session => {
             html += renderSessionItem(session, sessions);
@@ -1169,11 +1228,11 @@
             : 0;
 
           html += `
-            <div class="session-group" data-group="${groupName}">
+            <div class="session-group" data-group="${group.name}">
               <div class="session-group-header">
                 <div class="session-group-header-left">
                   <span class="session-group-chevron">&#9658;</span>
-                  <span class="session-group-name">${groupName}</span>
+                  <span class="session-group-name">${group.name}</span>
                   <span class="session-group-count">${groupSessions.length} sessions</span>
                 </div>
                 <span class="session-group-avg">${formatTime(avgTimePerPage, false)}/page avg</span>
@@ -1218,6 +1277,14 @@
           renderSessions();
         });
       });
+
+      const booxToggle = document.getElementById('booxToggle');
+      if (booxToggle) {
+        booxToggle.addEventListener('change', (e) => {
+          showBooxSessions = e.target.checked;
+          renderSessions();
+        });
+      }
     }
 
     function renderSessionItem(session, allSessions) {
