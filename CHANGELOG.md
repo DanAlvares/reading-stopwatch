@@ -4,6 +4,14 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.3.1] - 2026-03-21
+
+### Added
+- Version number displayed below app title
+- Version extracted from service worker cache name
+
+---
+
 ## [0.3.0] - 2026-03-21
 
 ### Added
