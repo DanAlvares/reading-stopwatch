@@ -476,7 +476,7 @@
     }
 
     .session-group-header {
-      padding: 1rem;
+      padding: .75rem;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -492,16 +492,24 @@
     .session-group-header-left {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     .session-group-chevron {
-      font-size: 0.75rem;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
       transition: transform 0.2s;
     }
 
     .session-group.open .session-group-chevron {
       transform: rotate(90deg);
+    }
+
+    .session-group-title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
     }
 
     .session-group-name {
@@ -518,6 +526,7 @@
       font-size: 0.875rem;
       color: var(--text-dim);
       font-family: 'SF Mono', 'Menlo', monospace;
+      align-self: flex-start;
     }
 
     .session-group-content {
@@ -1222,18 +1231,23 @@
           });
         } else {
           const allLaps = groupSessions.flatMap(s => s.laps);
+          const totalPages = allLaps.length;
           const totalPageTime = allLaps.reduce((sum, lap) => sum + ((lap.pageTime !== undefined ? lap.pageTime : 0) || (lap.time || 0)), 0);
-          const avgTimePerPage = allLaps.length > 0 
-            ? Math.floor(totalPageTime / allLaps.length)
+          const avgTimePerPage = totalPages > 0 
+            ? Math.floor(totalPageTime / totalPages)
             : 0;
 
           html += `
             <div class="session-group" data-group="${group.name}">
               <div class="session-group-header">
                 <div class="session-group-header-left">
-                  <span class="session-group-chevron">&#9658;</span>
-                  <span class="session-group-name">${group.name}</span>
-                  <span class="session-group-count">${groupSessions.length} sessions</span>
+                  <svg class="session-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                  <div class="session-group-title">
+                    <span class="session-group-name">${group.name}</span>
+                    <span class="session-group-count">${groupSessions.length} sessions (${totalPages} pages)</span>
+                  </div>
                 </div>
                 <span class="session-group-avg">${formatTime(avgTimePerPage, false)}/page avg</span>
               </div>
