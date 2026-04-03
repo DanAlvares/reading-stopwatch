@@ -4,15 +4,6 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
-## [0.2.8] - 2026-03-21
-
-### Added
-- "Show Boox" toggle to filter sessions containing "Boox" in the name
-- Sessions with "Boox" are hidden by default
-- Toggle appears at the top of the history list
-
----
-
 ## [0.3.0] - 2026-03-21
 
 ### Added
@@ -21,6 +12,8 @@ The cache version is incremented to force service worker updates to all users.
 - Group header shows name, session count, and average time per page
 - Groups are sorted alphabetically
 - Single sessions or sessions with unique names appear individually
+- "Show Boox" toggle to filter sessions containing "Boox" in the name
+- Sessions with "Boox" are hidden by default
 
 ---
 
