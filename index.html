@@ -365,6 +365,55 @@
       opacity: 1;
     }
 
+    .boox-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .boox-toggle:hover {
+      color: var(--text);
+    }
+
+    .boox-toggle input {
+      display: none;
+    }
+
+    .boox-toggle .toggle-switch {
+      width: 36px;
+      height: 20px;
+      background: var(--surface);
+      border-radius: 10px;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .boox-toggle .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s, background 0.2s;
+    }
+
+    .boox-toggle input:checked + .toggle-switch {
+      background: var(--accent);
+    }
+
+    .boox-toggle input:checked + .toggle-switch::after {
+      left: 18px;
+      background: white;
+    }
+
     .toast {
       position: fixed;
       top: 1rem;
@@ -746,6 +795,7 @@
     let wakeLock = null;
     let speechRecognition = null;
     let lastPageTrigger = 0;
+    let showBooxSessions = false;
 
     function flashScreen() {
       const overlay = document.getElementById('flashOverlay');
@@ -1130,7 +1180,18 @@
         return;
       }
 
-      sessionsList.innerHTML = sessions.map(session => {
+      const filteredSessions = sessions.filter(session => {
+        const isBoox = session.name.toLowerCase().includes('boox');
+        return showBooxSessions || !isBoox;
+      });
+
+      let html = `<label class="boox-toggle">
+        <input type="checkbox" id="booxToggle" ${showBooxSessions ? 'checked' : ''}>
+        <span class="toggle-switch"></span>
+        Show Boox
+      </label>`;
+
+      html += filteredSessions.map(session => {
         const date = new Date(session.date);
         const dateStr = date.toLocaleDateString('en-US', { 
           weekday: 'short', 
@@ -1152,10 +1213,10 @@
               <div class="session-stats">
                 <div class="session-stat">
                    <span>${session.laps.length} ${session.laps.length === 1 ? 'page' : 'pages'}</span>
-                 </div>
-                 <div class="session-stat">
-                   <span class="session-stat-value">${formatTime(avgTimePerLap, false)}/page</span>
-                 </div>
+                  </div>
+                  <div class="session-stat">
+                    <span class="session-stat-value">${formatTime(avgTimePerLap, false)}/page</span>
+                  </div>
                 ${session.name !== `Session ${sessions.indexOf(session) + 1}` ? `
                 <div class="session-stat">
                   <span>${session.name}</span>
@@ -1167,6 +1228,8 @@
           </div>
         `;
       }).join('');
+
+      sessionsList.innerHTML = html;
 
       sessionsList.querySelectorAll('.session-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -1187,6 +1250,14 @@
           renderSessions();
         });
       });
+
+      const booxToggle = document.getElementById('booxToggle');
+      if (booxToggle) {
+        booxToggle.addEventListener('change', (e) => {
+          showBooxSessions = e.target.checked;
+          renderSessions();
+        });
+      }
     }
 
     function showSessionDetail(sessionId, sessions) {
