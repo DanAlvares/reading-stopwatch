@@ -4,6 +4,13 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.3.2] - 2026-03-21
+
+### Fixed
+- Screen wake lock now re-acquired when resuming a paused session
+
+---
+
 ## [0.3.1] - 2026-03-21
 
 ### Added

@@ -1087,6 +1087,7 @@
         
         timerInterval = setInterval(updateDisplay, 10);
         
+        requestWakeLock();
         startSpeechRecognition();
         saveSessionState();
       }
