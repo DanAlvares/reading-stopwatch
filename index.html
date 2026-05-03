@@ -97,13 +97,12 @@
       font-family: 'SF Mono', 'Menlo', monospace;
     }
 
-    .timer-label {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-top: 0.5rem;
-    }
+     .timer-label {
+       font-size: 0.75rem;
+       color: var(--text-dim);
+       letter-spacing: 0.1em;
+       margin-top: 0.5rem;
+     }
 
     .controls {
       display: flex;
@@ -968,7 +967,7 @@
         updateDisplay();
 
         if (isPaused) {
-          timerLabelEl.textContent = 'Paused';
+          updateTimerLabel();
           startBtn.textContent = 'Resume';
           startBtn.classList.remove('btn-start');
           startBtn.classList.add('btn-pause');
@@ -976,7 +975,7 @@
           newPageBtn.style.display = 'none';
           endBtn.style.display = 'inline-block';
         } else if (laps.length > 0) {
-          timerLabelEl.textContent = 'Ended';
+          updateTimerLabel();
           newPageBtn.disabled = true;
           newPageBtn.style.display = 'none';
           resetBtn.style.display = 'inline-block';
@@ -1006,22 +1005,53 @@
       }
     });
 
-    function formatTime(ms, showMs = true) {
-      const totalSeconds = Math.floor(ms / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      const centiseconds = Math.floor((ms % 1000) / 10);
+     function formatTime(ms, showMs = true) {
+       const totalSeconds = Math.floor(ms / 1000);
+       const hours = Math.floor(totalSeconds / 3600);
+       const minutes = Math.floor((totalSeconds % 3600) / 60);
+       const seconds = totalSeconds % 60;
+       const centiseconds = Math.floor((ms % 1000) / 10);
 
-      const pad = (n) => n.toString().padStart(2, '0');
-      
-      if (showMs) {
-        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(centiseconds)}`;
+       const pad = (n) => n.toString().padStart(2, '0');
+       
+       if (showMs) {
+         return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(centiseconds)}`;
+       }
+       return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+     }
+
+     function calculateRunningAverage() {
+       let completedLaps = [];
+       if (laps.length === 0) {
+         return null;
+       }
+       if (isRunning || isPaused) {
+         // Exclude live page (first lap) when running or paused
+         completedLaps = laps.slice(1);
+       } else {
+         // Session ended, all laps are completed
+         completedLaps = laps;
+       }
+       if (completedLaps.length === 0) {
+         return null;
+       }
+       const totalTime = completedLaps.reduce((sum, lap) => sum + (lap.pageTime || 0), 0);
+       const avg = Math.floor(totalTime / completedLaps.length);
+       return `${formatTime(avg, false)}/page avg`;
+     }
+
+      function updateTimerLabel() {
+        // Not started or reset
+        if (!isRunning && !isPaused && laps.length === 0) {
+          timerLabelEl.textContent = 'Ready';
+          return;
+        }
+        
+        const avgText = calculateRunningAverage();
+        timerLabelEl.textContent = avgText || '00:00/page avg';
       }
-      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-    }
 
-     function updateDisplay() {
+      function updateDisplay() {
        const currentElapsed = isRunning ? Date.now() - startTime + elapsed : elapsed;
        timerEl.textContent = formatTime(currentElapsed, false);
        
@@ -1039,9 +1069,9 @@
        isRunning = true;
        isPaused = false;
        startTime = Date.now();
-       timerLabelEl.textContent = 'Running';
-       startBtn.textContent = 'Pause';
-       startBtn.classList.add('running');
+        updateTimerLabel();
+        startBtn.textContent = 'Pause';
+        startBtn.classList.add('running');
        startBtn.classList.remove('btn-start');
        startBtn.classList.add('btn-pause');
        newPageBtn.disabled = false;
@@ -1058,13 +1088,13 @@
        saveSessionState();
      }
 
-     function pause() {
-       isRunning = false;
-       isPaused = true;
-       elapsed += Date.now() - startTime;
-       clearInterval(timerInterval);
-       timerLabelEl.textContent = 'Paused';
-       startBtn.textContent = 'Resume';
+      function pause() {
+        isRunning = false;
+        isPaused = true;
+        elapsed += Date.now() - startTime;
+        clearInterval(timerInterval);
+        updateTimerLabel();
+        startBtn.textContent = 'Resume';
        startBtn.classList.remove('running');
        newPageBtn.style.display = 'none';
        endBtn.style.display = 'inline-block';
@@ -1078,7 +1108,7 @@
         isRunning = true;
         isPaused = false;
         startTime = Date.now();
-        timerLabelEl.textContent = 'Running';
+        updateTimerLabel();
         startBtn.textContent = 'Pause';
         startBtn.classList.add('running');
         newPageBtn.disabled = false;
@@ -1099,8 +1129,8 @@
       }
       isRunning = false;
       isPaused = false;
-      timerLabelEl.textContent = 'Ended';
-      newPageBtn.style.display = 'none';
+        updateTimerLabel();
+        newPageBtn.style.display = 'none';
       newPageBtn.disabled = true;
       endBtn.style.display = 'none';
       resetBtn.style.display = 'inline-block';
@@ -1120,8 +1150,8 @@
        pageCount = 0;
        clearInterval(timerInterval);
        timerEl.textContent = '00:00:00';
-       timerLabelEl.textContent = 'Ready';
-       startBtn.textContent = 'Start';
+        updateTimerLabel();
+        startBtn.textContent = 'Start';
        startBtn.classList.remove('running');
        startBtn.classList.remove('btn-pause');
        startBtn.classList.add('btn-start');
@@ -1154,22 +1184,25 @@
          totalSessionTime: currentTime,
          number: pageCount
        });
-       flashScreen();
+        flashScreen();
+        renderLaps();
+        updateTimerLabel();
+        saveSessionState();
+      }
+
+      function deleteLap(index) {
+        laps.splice(index, 1);
+        renderLaps();
+        updateTimerLabel();
+        saveSessionState();
+      }
+
+     function clearLaps() {
+       laps = [];
        renderLaps();
+       updateTimerLabel();
        saveSessionState();
      }
-
-     function deleteLap(index) {
-       laps.splice(index, 1);
-       renderLaps();
-       saveSessionState();
-     }
-
-    function clearLaps() {
-      laps = [];
-      renderLaps();
-      saveSessionState();
-    }
 
      function renderLaps() {
        if (laps.length === 0) {

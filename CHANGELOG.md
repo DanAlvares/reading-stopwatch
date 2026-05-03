@@ -4,6 +4,13 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.3.3] - 2026-05-03
+
+### Changed
+- Replaced status label (Running/Paused/Ended) below main timer with running average of completed pages in current session
+
+---
+
 ## [0.3.2] - 2026-03-21
 
 ### Fixed

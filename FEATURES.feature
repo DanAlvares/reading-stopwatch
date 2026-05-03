@@ -6,7 +6,7 @@ Feature: Reading Stopwatch PWA
     Given the app is loaded and timer shows "00:00:00" with "Ready" label
     When the user taps the "Start" button
     Then the timer starts counting
-    And the label changes to "Running"
+    And the label shows running average of completed pages
     And the button changes to "Pause"
     And "New Page" button appears
     And "End" button is hidden
@@ -16,7 +16,7 @@ Feature: Reading Stopwatch PWA
     Given the timer is running
     When the user taps the "Pause" button
     Then the timer stops
-    And the label changes to "Paused"
+    And the label shows running average of completed pages
     And the button changes to "Resume"
     And "New Page" button is hidden
     And "End" button appears
@@ -26,7 +26,7 @@ Feature: Reading Stopwatch PWA
     Given the timer is paused
     When the user taps the "Resume" button
     Then the timer continues
-    And the label changes to "Running"
+    And the label shows running average of completed pages
     And the button changes to "Pause"
     And "New Page" button appears
     And "End" button is hidden
@@ -36,7 +36,7 @@ Feature: Reading Stopwatch PWA
     Given the timer is running or paused
     When the user taps the "End" button
     Then the timer stops
-    And the label changes to "Ended"
+    And the label shows running average of all pages in session
     And "Reset" button appears
     And save modal opens
 
@@ -48,6 +48,13 @@ Feature: Reading Stopwatch PWA
     And the label shows "Ready"
     And all pages are cleared
     And buttons return to initial state
+
+  @timer
+  Scenario: Running Average Excludes Live Page
+    Given the timer is running with 2 completed pages
+    When viewing the label below the main timer
+    Then the average excludes the current live page
+    And only completed pages are included in the calculation
 
   @pages
   Scenario: Add New Page via Button
