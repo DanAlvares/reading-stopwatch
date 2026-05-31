@@ -446,8 +446,30 @@ Feature: Reading Stopwatch PWA
     When the user rapidly taps "New Page" multiple times
     Then each tap registers a new page correctly
 
-  @edge-cases
-  Scenario: Session Detail with Single Page
-    Given a session with only 1 page
-    When viewing detail
-    Then no fastest/slowest highlighting appears
+   @edge-cases
+   Scenario: Session Detail with Single Page
+     Given a session with only 1 page
+     When viewing detail
+     Then no fastest/slowest highlighting appears
+
+   @edge-cases
+   Scenario: Clear Pages Confirmation Shows
+     Given the timer is running with pages logged
+     When the user taps the "Clear" button
+     Then a confirmation dialog appears
+     And shows the message "Are you sure you want to clear all pages?"
+
+   @edge-cases
+   Scenario: Clear Pages Confirmation Cancel
+     Given a clear confirmation dialog is open
+     When the user taps "Cancel"
+     Then the dialog closes
+     And all pages remain intact
+
+   @edge-cases
+   Scenario: Clear Pages Confirmation Confirm
+     Given a clear confirmation dialog is open
+     When the user taps "Clear"
+     Then all pages are cleared
+     And the empty state message appears
+     And the Clear button is hidden

@@ -507,6 +507,84 @@
       opacity: 1;
     }
 
+    .confirmation-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--surface);
+      color: var(--text);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      font-size: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    .confirmation-toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirmation-toast-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .confirmation-toast-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirmation-message {
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .confirmation-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .confirmation-buttons button {
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--surface-hover);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .confirmation-buttons .btn-cancel {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .confirmation-buttons .btn-cancel:hover {
+      background: var(--surface);
+      border-color: var(--text-dim);
+    }
+
+    .confirmation-buttons .btn-confirm {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
+    }
+
+    .confirmation-buttons .btn-confirm:hover {
+      background: var(--danger-dim);
+      border-color: var(--danger-dim);
+    }
+
     .close-btn {
       background: none;
       border: none;
@@ -840,6 +918,15 @@
     Update Available
   </button>
 
+  <div class="confirmation-toast-overlay" id="confirmationOverlay"></div>
+  <div class="confirmation-toast" id="confirmationToast">
+    <div class="confirmation-message">Are you sure you want to clear all pages?</div>
+    <div class="confirmation-buttons">
+      <button class="btn-cancel" id="confirmCancel">Cancel</button>
+      <button class="btn-confirm" id="confirmClear">Clear</button>
+    </div>
+  </div>
+
   <script>
     const timerEl = document.getElementById('timer');
     const timerLabelEl = document.getElementById('timerLabel');
@@ -849,17 +936,21 @@
     const resetBtn = document.getElementById('resetBtn');
     const lapList = document.getElementById('lapList');
     const emptyState = document.getElementById('emptyState');
-    const clearLapsBtn = document.getElementById('clearLaps');
-    const historyBtn = document.getElementById('historyBtn');
-    const historyPanel = document.getElementById('historyPanel');
-    const closeHistory = document.getElementById('closeHistory');
-    const sessionsList = document.getElementById('sessionsList');
-    const saveModal = document.getElementById('saveModal');
-    const sessionNameInput = document.getElementById('sessionName');
-    const saveBtn = document.getElementById('saveBtn');
-    const discardBtn = document.getElementById('discardBtn');
-    const installPrompt = document.getElementById('installPrompt');
-    const micIndicator = document.getElementById('micIndicator');
+     const clearLapsBtn = document.getElementById('clearLaps');
+     const historyBtn = document.getElementById('historyBtn');
+     const historyPanel = document.getElementById('historyPanel');
+     const closeHistory = document.getElementById('closeHistory');
+     const sessionsList = document.getElementById('sessionsList');
+     const saveModal = document.getElementById('saveModal');
+     const sessionNameInput = document.getElementById('sessionName');
+     const saveBtn = document.getElementById('saveBtn');
+     const discardBtn = document.getElementById('discardBtn');
+     const installPrompt = document.getElementById('installPrompt');
+     const micIndicator = document.getElementById('micIndicator');
+     const confirmationOverlay = document.getElementById('confirmationOverlay');
+     const confirmationToast = document.getElementById('confirmationToast');
+     const confirmCancel = document.getElementById('confirmCancel');
+     const confirmClear = document.getElementById('confirmClear');
 
     let isRunning = false;
     let isPaused = false;
@@ -1197,12 +1288,23 @@
         saveSessionState();
       }
 
-     function clearLaps() {
-       laps = [];
-       renderLaps();
-       updateTimerLabel();
-       saveSessionState();
-     }
+      function showClearConfirmation() {
+        confirmationOverlay.classList.add('show');
+        confirmationToast.classList.add('show');
+      }
+
+      function hideClearConfirmation() {
+        confirmationOverlay.classList.remove('show');
+        confirmationToast.classList.remove('show');
+      }
+
+      function clearLaps() {
+        laps = [];
+        renderLaps();
+        updateTimerLabel();
+        saveSessionState();
+        hideClearConfirmation();
+      }
 
      function renderLaps() {
        if (laps.length === 0) {
@@ -1577,9 +1679,12 @@
     endBtn.addEventListener('click', end);
     resetBtn.addEventListener('click', reset);
 
-    newPageBtn.addEventListener('click', addSplit);
-    clearLapsBtn.addEventListener('click', clearLaps);
-    
+     newPageBtn.addEventListener('click', addSplit);
+     clearLapsBtn.addEventListener('click', showClearConfirmation);
+     confirmCancel.addEventListener('click', hideClearConfirmation);
+     confirmClear.addEventListener('click', clearLaps);
+     confirmationOverlay.addEventListener('click', hideClearConfirmation);
+     
     historyBtn.addEventListener('click', () => {
       renderSessions();
       historyPanel.classList.add('open');

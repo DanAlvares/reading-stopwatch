@@ -4,6 +4,13 @@ All notable changes to the Reading Stopwatch PWA are documented here.
 
 The cache version is incremented to force service worker updates to all users.
 
+## [0.3.4] - 2026-05-31
+
+### Added
+- Confirmation dialog when clearing pages to prevent accidental data loss
+
+---
+
 ## [0.3.3] - 2026-05-03
 
 ### Changed
