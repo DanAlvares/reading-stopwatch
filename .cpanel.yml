@@ -1,4 +1,4 @@
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/username/public_html/stopwatch
+    - export DEPLOYPATH=/home/codebla2/public_html/stopwatch
     - /bin/cp -R * $DEPLOYPATH
